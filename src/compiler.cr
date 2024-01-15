@@ -10,29 +10,31 @@ ctx = LLVM::Context.new
 
 mod = ctx.new_module("main_mod")
 
-func = mod.functions.add "sum", [ctx.int32, ctx.int32], ctx.int32
-func.basic_blocks.append("entrypoint") do |b|
-  l = func.params[0]
-  r = func.params[1]
+func = mod.functions.add "sum", [ctx.int32, ctx.int32], ctx.int32 do |function|
+  function.basic_blocks.append do |builder|
+    l, r = function.params
 
-  lr = b.add(l, r, "lr")
+    lr = builder.add l, r
 
-  b.ret(lr)
+    builder.ret lr
+  end
 end
 
-func2 = mod.functions.add("sumCaller", [ctx.int32, ctx.int32], ctx.int32)
-func2.basic_blocks.append("entrypoint1") do |builder|
-  a = func2.params[1]
-  b = func2.params[0]
+func2 = mod.functions.add "addThree", [ctx.int32, ctx.int32, ctx.int32], ctx.int32 do |function|
+  function.basic_blocks.append do |builder|
+    p1, p2, p3 = function.params
 
-  ba = builder.call(LLVM::Type.function([ctx.int32, ctx.int32], ctx.int32), func, [a, b], "callSumTmp")
+    p1p2 = builder.call LLVM::Type.function([ctx.int32, ctx.int32], ctx.int32), mod.functions["sum"], [p1, p2]
 
-  builder.ret(ba)
+    p1p2p3 = builder.call LLVM::Type.function([ctx.int32, ctx.int32], ctx.int32), mod.functions["sum"], [p1p2, p3]
+
+    builder.ret p1p2p3
+  end
 end
 
 mod.dump
 
 jit = LLVM::JITCompiler.new(mod)
 func_ptr = jit.get_pointer_to_global(func2)
-func_proc = Proc(Int32, Int32, Int32).new(func_ptr, Pointer(Void).null)
-pp func_proc.call(4, 5)
+func_proc = Proc(Int32, Int32, Int32, Int32).new(func_ptr, Pointer(Void).null)
+pp func_proc.call(4, 5, 6)
