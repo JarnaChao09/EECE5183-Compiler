@@ -27,6 +27,11 @@ generator.optimize
 
 generator.mod.dump
 
+jit = LLVM::JITCompiler.new(generator.mod)
+func_ptr = jit.get_pointer_to_global(generator.function)
+func_proc = Proc(Float64).new(func_ptr, Pointer(Void).null)
+pp func_proc.call
+
 # {% if host_flag?(:aarch64) %}
 #   LLVM.init_aarch64
 # {% elsif host_flag?(:x86_64) %}

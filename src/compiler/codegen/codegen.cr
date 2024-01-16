@@ -2,7 +2,9 @@ require "../ast/*"
 
 module Compiler
   class CodeGenerator
-    private property function : LLVM::Function
+    property ctx : LLVM::Context
+    property mod : LLVM::Module
+    property function : LLVM::Function
 
     def initialize(mod_name : String = "")
       {% if host_flag?(:aarch64) %}
@@ -12,7 +14,7 @@ module Compiler
       {% end %}
       @ctx = LLVM::Context.new
       @mod = @ctx.new_module(mod_name)
-      @function = @mod.functions.add "main", [] of LLVM::Type, @ctx.void
+      @function = @mod.functions.add "main", [] of LLVM::Type, @ctx.double
     end
 
     def generate(expr : Compiler::Expr)
@@ -26,10 +28,6 @@ module Compiler
       LLVM::PassBuilderOptions.new do |options|
         LLVM.run_passes(mod, level, target_machine, options)
       end
-    end
-
-    def mod
-      @mod
     end
   end
 end
