@@ -1,84 +1,79 @@
 require "./compiler/requires"
 require "./compiler/*"
 
-expression = Compiler::BinaryExpr.new(
+require "math"
+
+expressions = [
+  Compiler::AssignmentExpr.new(
+    "x", Compiler::NumberExpr.new(Math::PI / 2.0)
+  ),
+  Compiler::AssignmentExpr.new(
+    "y", Compiler::NumberExpr.new(Math::PI / 2.0)
+  ),
   Compiler::BinaryExpr.new(
     Compiler::BinaryExpr.new(
-      Compiler::NumberExpr.new(4.0),
-      Compiler::BinaryExpr::Operation::Multiplication,
-      Compiler::NumberExpr.new(5.0),
+      Compiler::BinaryExpr.new(
+        Compiler::NumberExpr.new(4.0),
+        Compiler::BinaryExpr::Operation::Multiplication,
+        Compiler::NumberExpr.new(5.0),
+      ),
+      Compiler::BinaryExpr::Operation::Addition,
+      Compiler::CallExpr.new("sin", [Compiler::VariableExpr.new("x")] of Compiler::Expr),
     ),
-    Compiler::BinaryExpr::Operation::Addition,
-    Compiler::NumberExpr.new(2.0),
+    Compiler::BinaryExpr::Operation::Division,
+    Compiler::NumberExpr.new(1.0),
   ),
-  Compiler::BinaryExpr::Operation::Division,
-  Compiler::NumberExpr.new(12.0),
-) # (4 * 5 + 2) / 11 == 2
+  Compiler::BinaryExpr.new(
+    Compiler::VariableExpr.new("x"),
+    Compiler::BinaryExpr::Operation::Addition,
+    Compiler::VariableExpr.new("y"),
+  ),
+] of Compiler::Expr
 
-puts "#{expression} = #{expression.codegen}"
+variables = {} of String => Float64
+functions = {"sin" => ->Math.sin(Float64)} of String => Proc(Float64, Float64)
+
+expressions.each do |expression|
+  if expression.is_a?(Compiler::AssignmentExpr)
+    expression.codegen variables, functions
+    pp "#{expression}"
+  else
+    pp "#{expression} = #{expression.codegen variables, functions}"
+  end
+end
 
 generator = Compiler::CodeGenerator.new "main"
 
-generator.generate expression
+# generator.variables["x"] = generator.ctx.double.const_double Math::PI / 2
+
+sin_type = LLVM::Type.function([generator.ctx.double], generator.ctx.double)
+
+func = generator.mod.functions.add "sin", sin_type
+
+generator.function_types["sin"] = sin_type
+
+printf_type = LLVM::Type.function([generator.ctx.int8.pointer], generator.ctx.int32, varargs = true)
+
+func = generator.mod.functions.add "printf", printf_type
+
+generator.function_types["printf"] = printf_type
+
+generator.generate expressions
 
 generator.mod.dump
+
+puts "========"
 
 generator.optimize
 
 generator.mod.dump
 
-jit = LLVM::JITCompiler.new(generator.mod)
-func_ptr = jit.get_pointer_to_global(generator.function)
-func_proc = Proc(Float64).new(func_ptr, Pointer(Void).null)
-pp func_proc.call
+puts "========"
 
-# {% if host_flag?(:aarch64) %}
-#   LLVM.init_aarch64
-# {% elsif host_flag?(:x86_64) %}
-#   LLVM.init_x86
-# {% end %}
+generator.mod.verify
 
-# ctx = LLVM::Context.new
-
-# mod = ctx.new_module("main_mod")
-
-# func = mod.functions.add "sum", [ctx.int32, ctx.int32], ctx.int32 do |function|
-#   function.basic_blocks.append do |builder|
-#     l, r = function.params
-
-#     lr = builder.add l, r, "lr"
-
-#     builder.ret lr
-#   end
-# end
-
-# func2 = mod.functions.add "addThree", [ctx.int32, ctx.int32], ctx.int32 do |function|
-#   function.basic_blocks.append do |builder|
-#     p1, p2 = function.params
-
-#     p1p2 = builder.call LLVM::Type.function([ctx.int32, ctx.int32], ctx.int32), mod.functions["sum"], [p1, p2], "p1p2"
-
-#     p3 = builder.add ctx.int32.const_int(6), ctx.int32.const_int(7), "p3"
-
-#     p1p2p3 = builder.call LLVM::Type.function([ctx.int32, ctx.int32], ctx.int32), mod.functions["sum"], [p1p2, p3], "p1p2p3"
-
-#     builder.ret p1p2p3
-#   end
-# end
-
-# puts "before passes"
-# mod.dump
-
-# target_machine = LLVM::Target.first.create_target_machine(LLVM.default_target_triple)
-# puts "target_machine = #{target_machine.triple}"
-
-# LLVM::PassBuilderOptions.new do |options|
-#   LLVM.run_passes(mod, "default<O3>", target_machine, options)
-# end
-# puts "after passes"
-# mod.dump
-
-# jit = LLVM::JITCompiler.new(mod)
-# func_ptr = jit.get_pointer_to_global(func2)
-# func_proc = Proc(Int32, Int32, Int32).new(func_ptr, Pointer(Void).null)
-# pp func_proc.call(4, 5)
+LLVM::JITCompiler.new generator.mod do |jit|
+  func_ptr = jit.get_pointer_to_global(generator.function)
+  func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
+  pp func_proc.call
+end
