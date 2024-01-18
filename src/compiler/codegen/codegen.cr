@@ -5,6 +5,7 @@ module Compiler
     property function : LLVM::Function
     property variables : Hash(String, LLVM::Value)
     property function_types : Hash(String, LLVM::Type)
+    property target_machine : LLVM::TargetMachine
 
     def initialize(mod_name : String = "")
       {% if host_flag?(:aarch64) %}
