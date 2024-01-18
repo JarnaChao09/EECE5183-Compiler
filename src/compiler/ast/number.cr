@@ -7,7 +7,7 @@ module Compiler
     def initialize(@value)
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Proc(Float64, Float64)))
+    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
       @value
     end
 

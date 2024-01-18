@@ -18,51 +18,47 @@ expressions = [
   Compiler::AssignmentExpr.new(
     "y", Compiler::NumberExpr.new(Math::PI / 2.0)
   ),
-  # Compiler::BinaryExpr.new(
+  # Compiler::AssignmentExpr.new(
+  #   "z",
   #   Compiler::BinaryExpr.new(
   #     Compiler::BinaryExpr.new(
-  #       Compiler::NumberExpr.new(4.0),
-  #       Compiler::BinaryExpr::Operation::Multiplication,
-  #       Compiler::NumberExpr.new(5.0),
+  #       Compiler::BinaryExpr.new(
+  #         Compiler::NumberExpr.new(4.0),
+  #         Compiler::BinaryExpr::Operation::Multiplication,
+  #         Compiler::NumberExpr.new(5.0),
+  #       ),
+  #       Compiler::BinaryExpr::Operation::Addition,
+  #       Compiler::CallExpr.new(
+  #         "sin", [Compiler::VariableExpr.new("x")] of Compiler::Expr
+  #       ),
   #     ),
-  #     Compiler::BinaryExpr::Operation::Addition,
-  #     Compiler::CallExpr.new("sin", [Compiler::VariableExpr.new("x")] of Compiler::Expr),
-  #   ),
-  #   Compiler::BinaryExpr::Operation::Division,
-  #   Compiler::NumberExpr.new(1.0),
+  #     Compiler::BinaryExpr::Operation::Division,
+  #     Compiler::NumberExpr.new(1.0),
+  #   )
   # ),
-  # Compiler::BinaryExpr.new(
-  #   Compiler::VariableExpr.new("x"),
-  #   Compiler::BinaryExpr::Operation::Addition,
-  #   Compiler::VariableExpr.new("y"),
-  # ),
-  Compiler::CallExpr.new("*id<Float64, Float64>:Float64", [Compiler::VariableExpr.new("x"), Compiler::VariableExpr.new("y")] of Compiler::Expr),
+  Compiler::AssignmentExpr.new(
+    "xy", Compiler::CallExpr.new("add2", [Compiler::VariableExpr.new("x"), Compiler::VariableExpr.new("y")] of Compiler::Expr),
+  ),
+  # Compiler::CallExpr.new("printf", [Compiler::StringExpr.new("%.16f\n"), Compiler::VariableExpr.new("z")] of Compiler::Expr),
+  Compiler::CallExpr.new("printf", [Compiler::StringExpr.new("%.16f\n"), Compiler::VariableExpr.new("xy")] of Compiler::Expr),
 ] of Compiler::Expr
 
-def id(x : Float64, y : Float64) : Float64
-  x + y
+variables = {} of String => Float64
+functions = {
+  "add2" => Compiler::Function.new(["x", "y"], Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Addition, Compiler::VariableExpr.new("y"))),
+} of String => Compiler::Function
+
+expressions.each do |expression|
+  expression.codegen variables, functions
+  # if expression.is_a?(Compiler::AssignmentExpr)
+  #   expression.codegen variables, functions
+  #   pp "#{expression}"
+  # else
+  #   pp "#{expression} = #{expression.codegen variables, functions}"
+  # end
 end
 
-->id(Float64, Float64)
-
-# variables = {} of String => Float64
-# functions = {
-#   "sin"                  => ->Math.sin(Float64),
-#   "*id<Float64>:Float64" => ->id(Float64),
-# } of String => Proc(Float64, Float64)
-
-# expressions.each do |expression|
-#   if expression.is_a?(Compiler::AssignmentExpr)
-#     expression.codegen variables, functions
-#     pp "#{expression}"
-#   else
-#     pp "#{expression} = #{expression.codegen variables, functions}"
-#   end
-# end
-
 generator = Compiler::CodeGenerator.new "main"
-
-# generator.variables["x"] = generator.ctx.double.const_double Math::PI / 2
 
 sin_type = LLVM::Type.function([generator.ctx.double], generator.ctx.double)
 
@@ -78,9 +74,9 @@ generator.function_types["printf"] = printf_type
 
 id_type = LLVM::Type.function([generator.ctx.double, generator.ctx.double], generator.ctx.double)
 
-func = generator.mod.functions.add "*id<Float64, Float64>:Float64", id_type
+func = generator.mod.functions.add "add2", id_type
 
-generator.function_types["*id<Float64, Float64>:Float64"] = id_type
+generator.function_types["add2"] = id_type
 
 generator.generate expressions
 

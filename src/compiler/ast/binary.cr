@@ -28,7 +28,7 @@ module Compiler
     def initialize(@lhs, @operation, @rhs)
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Proc(Float64, Float64)))
+    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
       l, r = @lhs.codegen(variables, functions), @rhs.codegen(variables, functions)
       case @operation
       in .addition?
@@ -51,13 +51,13 @@ module Compiler
         l, r = generate(builder, expr.lhs), generate(builder, expr.rhs)
         case expr.operation
         in .addition?
-          builder.fadd l, r
+          builder.fadd l, r, "faddtmp"
         in .subtraction?
-          builder.fsub l, r
+          builder.fsub l, r, "fsubtmp"
         in .multiplication?
-          builder.fmul l, r
+          builder.fmul l, r, "fmultmp"
         in .division?
-          builder.fdiv l, r
+          builder.fdiv l, r, "fdivtmp"
         end
       end
     end

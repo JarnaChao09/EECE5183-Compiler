@@ -12,8 +12,12 @@ module Compiler
       io << "#{function}(#{arguments.join(", ")})"
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Proc(Float64, Float64)))
-      functions[@function].call(arguments[0].codegen(variables, functions))
+    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
+      if @function == "printf"
+        puts arguments.map { |e| e.codegen(variables, functions) }
+        return 0.0
+      end
+      functions[@function].call(arguments.map { |argument| argument.codegen(variables, functions) }, variables, functions)
     end
   end
 

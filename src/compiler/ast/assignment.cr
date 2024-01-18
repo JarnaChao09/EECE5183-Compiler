@@ -8,7 +8,7 @@ module Compiler
     def initialize(@variable, @initializer)
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Proc(Float64, Float64)))
+    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
       value = @initializer.codegen variables, functions
       variables[@variable] = value
       value
@@ -21,7 +21,7 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, expr : AssignmentExpr) : LLVM::Value
-      alloca_location = builder.alloca @ctx.double
+      alloca_location = builder.alloca @ctx.double, expr.variable
       @variables[expr.variable] = alloca_location
       start_value = generate(builder, expr.initializer)
       builder.store start_value, alloca_location

@@ -25,10 +25,6 @@ module Compiler
       @function.basic_blocks.append do |builder|
         expressions.each do |expression|
           generated = generate(builder, expression)
-          unless expression.is_a?(AssignmentExpr)
-            function_type = @function_types["printf"]
-            builder.call function_type, @mod.functions["printf"], [builder.global_string_pointer("%.16f\n"), generated], "calltmp"
-          end
         end
         builder.ret @ctx.int32.const_int(0)
       end

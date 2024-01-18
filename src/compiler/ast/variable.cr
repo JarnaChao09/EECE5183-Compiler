@@ -7,7 +7,7 @@ module Compiler
     def initialize(@name)
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Proc(Float64, Float64)))
+    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
       variables[@name]
     end
 
@@ -18,7 +18,7 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, expr : VariableExpr) : LLVM::Value
-      builder.load @ctx.double, @variables[expr.name]
+      builder.load @ctx.double, @variables[expr.name], expr.name
     end
   end
 end
