@@ -3,13 +3,13 @@ require "./compiler/*"
 
 require "math"
 
-# file = File.read("./spec/programs/correct/test1.src")
+file = File.read("./spec/programs/correct/test1.src")
 
-# scanner = Compiler::Scanner.new file
+scanner = Compiler::Scanner.new file
 
-# scanner.tokens.map { |token| token.lexeme }.each do |lexeme|
-#   puts lexeme
-# end
+scanner.tokens.map { |token| token.lexeme }.each do |lexeme|
+  puts lexeme
+end
 
 expressions = [
   Compiler::AssignmentExpr.new(
