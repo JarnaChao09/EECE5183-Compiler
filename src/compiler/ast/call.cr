@@ -12,7 +12,7 @@ module Compiler
       io << "#{function}(#{arguments.join(", ")})"
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
+    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
       if @function == "printf"
         puts arguments.map { |e| e.codegen(variables, functions) }
         return 0.0

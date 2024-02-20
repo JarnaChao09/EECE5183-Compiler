@@ -9,7 +9,7 @@ module Compiler
     def initialize(@parameters, @body)
     end
 
-    def call(arguments : Array(Float64), variables : Hash(String, Float64), functions : Hash(String, Function))
+    def call(arguments : Array(Value), variables : Hash(String, Value), functions : Hash(String, Function))
       unless arguments.size == @parameters.size
         raise "Incorrect number of arguments"
       end

@@ -1,8 +1,8 @@
 require "./expr"
 
 module Compiler
-  class StringExpr < Expr
-    property value : String
+  class BooleanExpr < Expr
+    property value : Bool
 
     def initialize(@value)
     end
@@ -16,9 +16,8 @@ module Compiler
     end
   end
 
-  class Compiler::CodeGenerator
-    def generate(builder, expr : StringExpr) : LLVM::Value
-      builder.global_string_pointer(expr.value)
-    end
-  end
+  # class Compiler::CodeGenerator
+  #   def generate(builder, expr : StringExpr) : LLVM::Value
+  #   end
+  # end
 end

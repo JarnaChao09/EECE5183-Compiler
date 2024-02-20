@@ -28,17 +28,39 @@ module Compiler
     def initialize(@lhs, @operation, @rhs)
     end
 
-    def codegen(variables : Hash(String, Float64), functions : Hash(String, Function))
+    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
       l, r = @lhs.codegen(variables, functions), @rhs.codegen(variables, functions)
       case @operation
       in .addition?
-        l + r
+        case {l, r}
+        when {String, String}
+          l + r
+        when {Float64, Float64}
+          l + r
+        else
+          raise "Type Mismatch between #{l} and #{r}"
+        end
       in .subtraction?
-        l - r
+        case {l, r}
+        when {Float64, Float64}
+          l - r
+        else
+          raise "Type Mismatch between #{l} and #{r}"
+        end
       in .multiplication?
-        l * r
+        case {l, r}
+        when {Float64, Float64}
+          l * r
+        else
+          raise "Type Mismatch between #{l} and #{r}"
+        end
       in .division?
-        l / r
+        case {l, r}
+        when {Float64, Float64}
+          l / r
+        else
+          raise "Type Mismatch between #{l} and #{r}"
+        end
       end
     end
 
