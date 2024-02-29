@@ -17,4 +17,11 @@ module Compiler
       io << @name << @function
     end
   end
+
+  class Compiler::CodeGenerator
+    def generate(builder, expr : FunctionDefinitionStmt) : LLVM::Value
+      @ctx.double.const_double(0.0)
+      # generate(builder, expr.expression)
+    end
+  end
 end

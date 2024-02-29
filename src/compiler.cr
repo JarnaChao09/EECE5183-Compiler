@@ -44,16 +44,17 @@ require "math"
 # ] of Compiler::Expr
 
 statements = [
-  Compiler::FunctionDefinitionStmt.new(
-    "add2", Compiler::Function.new(
-    ["x", "y"],
-    Compiler::BinaryExpr.new(
-      Compiler::VariableExpr.new("x"),
-      Compiler::BinaryExpr::Operation::Addition,
-      Compiler::VariableExpr.new("y")
-    )
-  )
-  ),
+  # Compiler::FunctionDefinitionStmt.new(
+  #   "add2",
+  #   Compiler::Function.new(
+  #     ["x", "y"],
+  #     Compiler::BinaryExpr.new(
+  #       Compiler::VariableExpr.new("x"),
+  #       Compiler::BinaryExpr::Operation::Addition,
+  #       Compiler::VariableExpr.new("y")
+  #     )
+  #   )
+  # ),
   Compiler::ExpressionStmt.new(
     Compiler::AssignmentExpr.new(
       "x", Compiler::NumberExpr.new(Math::PI / 2.0)
@@ -66,14 +67,14 @@ statements = [
   ),
   Compiler::ExpressionStmt.new(
     Compiler::CallExpr.new(
-      "printf", [Compiler::StringExpr.new("%.16f\n"), Compiler::VariableExpr.new("doublex"), Compiler::BooleanExpr.new(true)] of Compiler::Expr
+      "printf", [Compiler::StringExpr.new("%.16f %d\n"), Compiler::VariableExpr.new("doublex"), Compiler::BooleanExpr.new(true)] of Compiler::Expr
     )
   ),
 ] of Compiler::Stmt
 
 variables = {} of String => Compiler::Value
 functions = {
-  # "add2" => Compiler::Function.new(["x", "y"], Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Addition, Compiler::VariableExpr.new("y"))),
+  #   # "add2" => Compiler::Function.new(["x", "y"], Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Addition, Compiler::VariableExpr.new("y"))),
 } of String => Compiler::Function
 
 # expressions.each do |expression|
@@ -86,46 +87,92 @@ functions = {
 #   # end
 # end
 
-statements.each do |statement|
-  statement.codegen variables, functions
+# statements.each do |statement|
+#   statement.codegen variables, functions
+# end
+
+generator = Compiler::CodeGenerator.new "main"
+
+sin_type = LLVM::Type.function([generator.ctx.double], generator.ctx.double)
+
+func = generator.mod.functions.add "sin", sin_type
+
+generator.function_types["sin"] = sin_type
+
+printf_type = LLVM::Type.function([generator.ctx.int8.pointer], generator.ctx.int32, varargs = true)
+
+func = generator.mod.functions.add "printf", printf_type
+
+generator.function_types["printf"] = printf_type
+
+id_type = LLVM::Type.function([generator.ctx.double, generator.ctx.double], generator.ctx.double)
+
+func = generator.mod.functions.add "add2", id_type
+
+generator.function_types["add2"] = id_type
+
+generator.generate statements
+
+generator.mod.dump
+
+puts "========"
+
+generator.optimize
+
+generator.mod.dump
+
+puts "========"
+
+generator.mod.verify
+
+LLVM::JITCompiler.new generator.mod do |jit|
+  func_ptr = jit.get_pointer_to_global(generator.function)
+  func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
+  puts "exited with #{func_proc.call}"
 end
 
-# generator = Compiler::CodeGenerator.new "main"
+# LLVM.init_aarch64
 
-# sin_type = LLVM::Type.function([generator.ctx.double], generator.ctx.double)
+# ctx = LLVM::Context.new
 
-# func = generator.mod.functions.add "sin", sin_type
+# mod = ctx.new_module("mod")
 
-# generator.function_types["sin"] = sin_type
+# builder1 = nil
 
-# printf_type = LLVM::Type.function([generator.ctx.int8.pointer], generator.ctx.int32, varargs = true)
+# func1 = mod.functions.add("foo", [ctx.int32, ctx.int32], ctx.int32)
 
-# func = generator.mod.functions.add "printf", printf_type
+# func1.basic_blocks.append do |b|
+#   builder1 = b
+# end
 
-# generator.function_types["printf"] = printf_type
+# builder2 = nil
 
-# id_type = LLVM::Type.function([generator.ctx.double, generator.ctx.double], generator.ctx.double)
+# func2 = mod.functions.add("bar", [ctx.int32, ctx.int32], ctx.int32)
 
-# func = generator.mod.functions.add "add2", id_type
+# func2.basic_blocks.append do |b|
+#   builder2 = b
+# end
 
-# generator.function_types["add2"] = id_type
+# # ## Bar
+# l, r = func2.params
 
-# generator.generate expressions
+# lr = builder2.not_nil!.sub l, r
 
-# generator.mod.dump
+# builder2.not_nil!.ret lr
 
-# puts "========"
+# # ## Foo
+# l, r = func1.params
 
-# generator.optimize
+# lr = builder1.not_nil!.call(LLVM::Type.function([ctx.int32, ctx.int32], ctx.int32), func2, [l, r])
 
-# generator.mod.dump
+# builder1.not_nil!.ret lr
 
-# puts "========"
+# mod.verify
 
-# generator.mod.verify
+# mod.dump
 
-# LLVM::JITCompiler.new generator.mod do |jit|
-#   func_ptr = jit.get_pointer_to_global(generator.function)
-#   func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
-#   puts "exited with #{func_proc.call}"
+# LLVM::JITCompiler.new mod do |jit|
+#   func_ptr = jit.get_pointer_to_global(func1)
+#   func_proc = Proc(Int32, Int32, Int32).new(func_ptr, Pointer(Void).null)
+#   puts "exited with #{func_proc.call(20, 15)}"
 # end

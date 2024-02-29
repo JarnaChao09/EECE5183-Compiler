@@ -12,4 +12,10 @@ module Compiler
       expression.codegen(variables, functions)
     end
   end
+
+  class Compiler::CodeGenerator
+    def generate(builder, expr : ExpressionStmt) : LLVM::Value
+      generate(builder, expr.expression)
+    end
+  end
 end

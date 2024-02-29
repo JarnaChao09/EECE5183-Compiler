@@ -21,10 +21,10 @@ module Compiler
       @target_machine = LLVM::Target.first.create_target_machine(LLVM.default_target_triple)
     end
 
-    def generate(expressions : Array(Compiler::Expr))
+    def generate(statements : Array(Compiler::Stmt))
       @function.basic_blocks.append do |builder|
-        expressions.each do |expression|
-          generated = generate(builder, expression)
+        statements.each do |statement|
+          generated = generate(builder, statement)
         end
         builder.ret @ctx.int32.const_int(0)
       end
