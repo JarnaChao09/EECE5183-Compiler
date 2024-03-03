@@ -57,19 +57,55 @@ statements = [
   # ),
   Compiler::ExpressionStmt.new(
     Compiler::AssignmentExpr.new(
-      "x", Compiler::NumberExpr.new(Math::PI / 2.0)
+      "x", Compiler::NumberExpr.new(5.0)
     )
   ),
   Compiler::ExpressionStmt.new(
     Compiler::AssignmentExpr.new(
-      "doublex", Compiler::CallExpr.new("add2", [Compiler::VariableExpr.new("x"), Compiler::VariableExpr.new("x")] of Compiler::Expr)
+      "y", Compiler::NumberExpr.new(4.0)
     )
   ),
   Compiler::ExpressionStmt.new(
-    Compiler::CallExpr.new(
-      "printf", [Compiler::StringExpr.new("%.16f %d\n"), Compiler::VariableExpr.new("doublex"), Compiler::BooleanExpr.new(true)] of Compiler::Expr
+    Compiler::AssignmentExpr.new("z",
+      Compiler::BinaryExpr.new(
+        Compiler::BinaryExpr.new(
+          Compiler::VariableExpr.new("x"),
+          Compiler::BinaryExpr::Operation::Multiplication,
+          Compiler::VariableExpr.new("x"),
+        ),
+        Compiler::BinaryExpr::Operation::Division,
+        Compiler::VariableExpr.new("y"),
+      )
     )
   ),
+  Compiler::ExpressionStmt.new(
+    Compiler::AssignmentExpr.new("w",
+      Compiler::BinaryExpr.new(
+        Compiler::VariableExpr.new("x"),
+        Compiler::BinaryExpr::Operation::Multiplication,
+        Compiler::BinaryExpr.new(
+          Compiler::VariableExpr.new("x"),
+          Compiler::BinaryExpr::Operation::Division,
+          Compiler::VariableExpr.new("y"),
+        ),
+      )
+    )
+  ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::AssignmentExpr.new(
+  #     "x", Compiler::NumberExpr.new(Math::PI / 2.0)
+  #   )
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::AssignmentExpr.new(
+  #     "doublex", Compiler::CallExpr.new("add2", [Compiler::VariableExpr.new("x"), Compiler::VariableExpr.new("x")] of Compiler::Expr)
+  #   )
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::CallExpr.new(
+  #     "printf", [Compiler::StringExpr.new("%.16f %d\n"), Compiler::VariableExpr.new("doublex"), Compiler::BooleanExpr.new(true)] of Compiler::Expr
+  #   )
+  # ),
 ] of Compiler::Stmt
 
 variables = {} of String => Compiler::Value
