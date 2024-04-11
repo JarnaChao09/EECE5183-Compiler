@@ -69,9 +69,21 @@ module Compiler
     end
 
     class Compiler::CodeGenerator
-      def generate(builder, expr : BinaryExpr) : LLVM::Value
-        l, r = generate(builder, expr.lhs), generate(builder, expr.rhs)
-        case expr.operation
+      private def build_int_operation(builder, operation : BinaryExpr::Operation, l : LLVM::Value, r : LLVM::Value)
+        case operation
+        in .addition?
+          builder.add l, r, "faddtmp"
+        in .subtraction?
+          builder.sub l, r, "fsubtmp"
+        in .multiplication?
+          builder.mul l, r, "fmultmp"
+        in .division?
+          builder.sdiv l, r, "fdivtmp"
+        end
+      end
+
+      private def build_fp_operation(builder, operation : BinaryExpr::Operation, l : LLVM::Value, r : LLVM::Value)
+        case operation
         in .addition?
           builder.fadd l, r, "faddtmp"
         in .subtraction?
@@ -80,6 +92,24 @@ module Compiler
           builder.fmul l, r, "fmultmp"
         in .division?
           builder.fdiv l, r, "fdivtmp"
+        end
+      end
+
+      def generate(builder, expr : BinaryExpr) : LLVM::Value
+        l, r = generate(builder, expr.lhs), generate(builder, expr.rhs)
+        case {l.type.kind, r.type.kind}
+        when {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Integer}
+          build_int_operation builder, expr.operation, l, r
+        when {LLVM::Type::Kind::Double, _}
+          fpr = builder.si2fp r, l.type, "casttmp"
+          build_fp_operation builder, expr.operation, l, fpr
+        when {_, LLVM::Type::Kind::Double}
+          fpl = builder.si2fp l, r.type, "casttmp"
+          build_fp_operation builder, expr.operation, fpl, r
+        when {LLVM::Type::Kind::Double, LLVM::Type::Kind::Double}
+          build_fp_operation builder, expr.operation, l, r
+        else
+          raise "unreachable"
         end
       end
     end

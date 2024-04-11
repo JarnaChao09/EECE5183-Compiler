@@ -18,7 +18,8 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, expr : VariableExpr) : LLVM::Value
-      builder.load @ctx.double, @variables[expr.name], expr.name
+      variable, variable_type = @variables[expr.name]
+      builder.load variable_type, variable, expr.name
     end
   end
 end

@@ -3,7 +3,7 @@ module Compiler
     property ctx : LLVM::Context
     property mod : LLVM::Module
     property function : LLVM::Function
-    property variables : Hash(String, LLVM::Value)
+    property variables : Hash(String, {LLVM::Value, LLVM::Type})
     property function_types : Hash(String, LLVM::Type)
     property target_machine : LLVM::TargetMachine
 
@@ -16,7 +16,7 @@ module Compiler
       @ctx = LLVM::Context.new
       @mod = @ctx.new_module(mod_name)
       @function = @mod.functions.add "main", [] of LLVM::Type, @ctx.int32
-      @variables = {} of String => LLVM::Value
+      @variables = {} of String => {LLVM::Value, LLVM::Type}
       @function_types = {} of String => LLVM::Type
       @target_machine = LLVM::Target.first.create_target_machine(LLVM.default_target_triple)
     end
@@ -27,6 +27,16 @@ module Compiler
           generated = generate(builder, statement)
         end
         builder.ret @ctx.int32.const_int(0)
+      end
+    end
+
+    def define_native_function(name : String, types : Array(LLVM::Type), return_type : LLVM::Type, &)
+      function_type = LLVM::Type.function(types, return_type)
+      @function_types[name] = function_type
+      @mod.functions.add name, function_type do |function|
+        function.basic_blocks.append do |builder|
+          yield self, builder, function
+        end
       end
     end
 
