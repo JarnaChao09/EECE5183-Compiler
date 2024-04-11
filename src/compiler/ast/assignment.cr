@@ -34,7 +34,6 @@ module Compiler
       #   puts start_value.type.kind
       # end
       @variables[expr.variable] = {alloca_location, start_value.type}
-
       builder.store start_value, alloca_location
     end
   end
