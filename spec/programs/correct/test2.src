@@ -1,7 +1,7 @@
 program test_program is
     variable fibb_result : integer;
     variable out : bool;
-
+    
     procedure fibb : integer(variable n : integer)
         variable result : integer;
         variable a : integer;
@@ -22,9 +22,9 @@ program test_program is
         
         a := fibb(n-1);
         b := fibb(n-2);
-
+        
         result := a + b;
-	return result;
+        return result;
     end procedure;
 begin
     fibb_result := -1234;
