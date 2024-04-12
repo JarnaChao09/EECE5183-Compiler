@@ -1,4 +1,5 @@
 require "./value"
+require "./type"
 require "../codegen/*"
 
 module Compiler

@@ -89,16 +89,40 @@ statements = [
   ),
   Compiler::ExpressionStmt.new(
     Compiler::AssignmentExpr.new(
-      "result", Compiler::BinaryExpr.new(
-      Compiler::VariableExpr.new("x"),
-      Compiler::BinaryExpr::Operation::Addition,
-      Compiler::VariableExpr.new("y"),
+      "result",
+      Compiler::BinaryExpr.new(
+        Compiler::CastExpr.new(
+          Compiler::VariableExpr.new("x"),
+          Compiler::Type::Double,
+        ),
+        Compiler::BinaryExpr::Operation::Addition,
+        Compiler::VariableExpr.new("y"),
+      )
     )
+  ),
+  Compiler::ExpressionStmt.new(
+    Compiler::AssignmentExpr.new(
+      "result_add",
+      Compiler::CallExpr.new(
+        "add2",
+        [
+          Compiler::CastExpr.new(
+            Compiler::VariableExpr.new("x"),
+            Compiler::Type::Double,
+          ),
+          Compiler::VariableExpr.new("y"),
+        ] of Compiler::Expr
+      )
     )
   ),
   Compiler::ExpressionStmt.new(
     Compiler::CallExpr.new(
       "printf", [Compiler::StringExpr.new("x + y = %.16f\n"), Compiler::VariableExpr.new("result")]
+    )
+  ),
+  Compiler::ExpressionStmt.new(
+    Compiler::CallExpr.new(
+      "printf", [Compiler::StringExpr.new("x + y = %.16f\n"), Compiler::VariableExpr.new("result_add")]
     )
   ),
   # Compiler::ExpressionStmt.new(

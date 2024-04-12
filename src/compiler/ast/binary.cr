@@ -100,12 +100,6 @@ module Compiler
         case {l.type.kind, r.type.kind}
         when {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Integer}
           build_int_operation builder, expr.operation, l, r
-        when {LLVM::Type::Kind::Double, _}
-          fpr = builder.si2fp r, l.type, "casttmp"
-          build_fp_operation builder, expr.operation, l, fpr
-        when {_, LLVM::Type::Kind::Double}
-          fpl = builder.si2fp l, r.type, "casttmp"
-          build_fp_operation builder, expr.operation, fpl, r
         when {LLVM::Type::Kind::Double, LLVM::Type::Kind::Double}
           build_fp_operation builder, expr.operation, l, r
         else
