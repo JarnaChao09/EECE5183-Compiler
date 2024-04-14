@@ -366,9 +366,9 @@ generator.mod.dump
 
 puts "========"
 
-# generator.optimize
+generator.optimize
 
-# generator.mod.dump
+generator.mod.dump
 
 puts "========"
 

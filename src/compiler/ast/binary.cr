@@ -11,6 +11,8 @@ module Compiler
       Multiplication
       Division
 
+      # TODO: add logical operators
+
       def to_s(io : IO)
         io << case self
         in .addition?
