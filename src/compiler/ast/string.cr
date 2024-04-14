@@ -17,7 +17,7 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, expr : StringExpr) : LLVM::Value
+    def generate(builder, basic_block, expr : StringExpr) : LLVM::Value
       builder.global_string_pointer(expr.value)
     end
   end

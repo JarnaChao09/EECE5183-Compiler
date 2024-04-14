@@ -17,7 +17,7 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, expr : BooleanExpr) : LLVM::Value
+    def generate(builder, basic_block, expr : BooleanExpr) : LLVM::Value
       @ctx.int1.const_int(expr.value ? 1 : 0)
     end
   end

@@ -22,12 +22,23 @@ module Compiler
     end
 
     def generate(statements : Array(Compiler::Stmt))
-      @function.basic_blocks.append do |builder|
-        statements.each do |statement|
-          generated = generate(builder, statement)
-        end
-        builder.ret @ctx.int32.const_int(0)
+      current_builder = @ctx.new_builder
+      current_basic_block = @function.basic_blocks.append
+
+      statements.each do |statement|
+        current_builder.position_at_end current_basic_block
+
+        current_basic_block = generate(current_builder, current_basic_block, statement)
       end
+
+      current_builder.position_at_end current_basic_block
+      current_builder.ret @ctx.int32.const_int 0
+      # @function.basic_blocks.append do |builder|
+      #   statements.each do |statement|
+      #     generated = generate(builder, statement)
+      #   end
+      #   builder.ret @ctx.int32.const_int(0)
+      # end
     end
 
     def define_native_function(name : String, types : Array(LLVM::Type), return_type : LLVM::Type, &)

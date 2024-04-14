@@ -20,10 +20,10 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, expr : AssignmentExpr) : LLVM::Value
+    def generate(builder, basic_block, expr : AssignmentExpr) : LLVM::Value
       # todo: fix to not always create a new variable on creation
       # todo: this is variable declaration codegen, not variable assignment
-      start_value = generate(builder, expr.initializer)
+      start_value = generate(builder, basic_block, expr.initializer)
       alloca_location = builder.alloca start_value.type, expr.variable
       # case start_value.type.kind
       # when LLVM::Type::Kind::Double

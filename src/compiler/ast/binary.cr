@@ -95,8 +95,8 @@ module Compiler
         end
       end
 
-      def generate(builder, expr : BinaryExpr) : LLVM::Value
-        l, r = generate(builder, expr.lhs), generate(builder, expr.rhs)
+      def generate(builder, basic_block, expr : BinaryExpr) : LLVM::Value
+        l, r = generate(builder, basic_block, expr.lhs), generate(builder, basic_block, expr.rhs)
         case {l.type.kind, r.type.kind}
         when {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Integer}
           build_int_operation builder, expr.operation, l, r

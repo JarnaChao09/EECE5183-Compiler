@@ -17,7 +17,7 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, expr : VariableExpr) : LLVM::Value
+    def generate(builder, basic_block, expr : VariableExpr) : LLVM::Value
       variable, variable_type = @variables[expr.name]
       builder.load variable_type, variable, expr.name
     end

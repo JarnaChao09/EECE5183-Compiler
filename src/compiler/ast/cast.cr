@@ -17,8 +17,8 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, expr : CastExpr) : LLVM::Value
-      value = generate(builder, expr.expression)
+    def generate(builder, basic_block, expr : CastExpr) : LLVM::Value
+      value = generate builder, basic_block, expr.expression
       llvm_casted_type = expr.casted_type.to_llvm_type @ctx
       return case {value.type.kind, llvm_casted_type.kind}
       in {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Double}

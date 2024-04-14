@@ -19,9 +19,9 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, expr : FunctionDefinitionStmt) : LLVM::Value
-      @ctx.double.const_double(0.0)
+    def generate(builder, basic_block, expr : FunctionDefinitionStmt) : LLVM::BasicBlock
       # generate(builder, expr.expression)
+      basic_block
     end
   end
 end

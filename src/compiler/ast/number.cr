@@ -17,7 +17,7 @@ module Compiler
       end
 
       class Compiler::CodeGenerator
-        def generate(builder, expr : {{ number_type_name }}Expr) : LLVM::Value
+        def generate(builder, basic_block, expr : {{ number_type_name }}Expr) : LLVM::Value
           {{ codegen_code }}
         end
       end
