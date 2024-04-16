@@ -8,12 +8,6 @@ module Compiler
     def initialize(@variable, @initializer)
     end
 
-    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
-      value = @initializer.codegen variables, functions
-      variables[@variable] = value
-      value
-    end
-
     def to_s(io : IO)
       io << "#{variable} = #{initializer}"
     end

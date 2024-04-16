@@ -11,7 +11,14 @@ module Compiler
       Multiplication
       Division
 
-      # TODO: add logical operators
+      LessThan
+      LessEqual
+      GreaterThan
+      GreaterEqual
+      Equal
+      NotEqual
+
+      # TODO: add bitwise operators
 
       def to_s(io : IO)
         io << case self
@@ -23,47 +30,23 @@ module Compiler
           "*"
         in .division?
           "/"
+        in .less_than?
+          "<"
+        in .less_equal?
+          "<="
+        in .greater_than?
+          ">"
+        in .greater_equal?
+          ">="
+        in .equal?
+          "=="
+        in .not_equal?
+          "!="
         end
       end
     end
 
     def initialize(@lhs, @operation, @rhs)
-    end
-
-    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
-      l, r = @lhs.codegen(variables, functions), @rhs.codegen(variables, functions)
-      case @operation
-      in .addition?
-        case {l, r}
-        when {String, String}
-          l + r
-        when {Float64, Float64}
-          l + r
-        else
-          raise "Type Mismatch between #{l} and #{r}"
-        end
-      in .subtraction?
-        case {l, r}
-        when {Float64, Float64}
-          l - r
-        else
-          raise "Type Mismatch between #{l} and #{r}"
-        end
-      in .multiplication?
-        case {l, r}
-        when {Float64, Float64}
-          l * r
-        else
-          raise "Type Mismatch between #{l} and #{r}"
-        end
-      in .division?
-        case {l, r}
-        when {Float64, Float64}
-          l / r
-        else
-          raise "Type Mismatch between #{l} and #{r}"
-        end
-      end
     end
 
     def to_s(io : IO)
@@ -81,6 +64,18 @@ module Compiler
           builder.mul l, r, "fmultmp"
         in .division?
           builder.sdiv l, r, "fdivtmp"
+        in .less_than?
+          builder.icmp LLVM::IntPredicate::SLT, l, r, "lttmp"
+        in .less_equal?
+          builder.icmp LLVM::IntPredicate::SLE, l, r, "letmp"
+        in .greater_than?
+          builder.icmp LLVM::IntPredicate::SGT, l, r, "gttmp"
+        in .greater_equal?
+          builder.icmp LLVM::IntPredicate::SGE, l, r, "getmp"
+        in .equal?
+          builder.icmp LLVM::IntPredicate::EQ, l, r, "eqtmp"
+        in .not_equal?
+          builder.icmp LLVM::IntPredicate::NE, l, r, "netmp"
         end
       end
 
@@ -94,6 +89,18 @@ module Compiler
           builder.fmul l, r, "fmultmp"
         in .division?
           builder.fdiv l, r, "fdivtmp"
+        in .less_than?
+          builder.fcmp LLVM::RealPredicate::OLT, l, r, "lttmp"
+        in .less_equal?
+          builder.fcmp LLVM::RealPredicate::OLE, l, r, "letmp"
+        in .greater_than?
+          builder.fcmp LLVM::RealPredicate::OGT, l, r, "gttmp"
+        in .greater_equal?
+          builder.fcmp LLVM::RealPredicate::OGE, l, r, "getmp"
+        in .equal?
+          builder.fcmp LLVM::RealPredicate::OEQ, l, r, "eqtmp"
+        in .not_equal?
+          builder.fcmp LLVM::RealPredicate::ONE, l, r, "netmp"
         end
       end
 

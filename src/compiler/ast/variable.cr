@@ -7,10 +7,6 @@ module Compiler
     def initialize(@name)
     end
 
-    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
-      variables[@name]
-    end
-
     def to_s(io : IO)
       io << "(#{@name})"
     end

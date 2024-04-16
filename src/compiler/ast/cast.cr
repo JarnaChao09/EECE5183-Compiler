@@ -11,9 +11,6 @@ module Compiler
     def to_s(io : IO)
       io << "cast<#{@casted_type.kind}>(#{@expression})"
     end
-
-    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
-    end
   end
 
   class Compiler::CodeGenerator

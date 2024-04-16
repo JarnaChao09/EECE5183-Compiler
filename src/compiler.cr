@@ -11,38 +11,6 @@ require "math"
 #   puts lexeme
 # end
 
-# expressions = [
-#   Compiler::AssignmentExpr.new(
-#     "x", Compiler::NumberExpr.new(Math::PI / 2.0)
-#   ),
-#   Compiler::AssignmentExpr.new(
-#     "y", Compiler::NumberExpr.new(Math::PI / 2.0)
-#   ),
-#   # Compiler::AssignmentExpr.new(
-#   #   "z",
-#   #   Compiler::BinaryExpr.new(
-#   #     Compiler::BinaryExpr.new(
-#   #       Compiler::BinaryExpr.new(
-#   #         Compiler::NumberExpr.new(4.0),
-#   #         Compiler::BinaryExpr::Operation::Multiplication,
-#   #         Compiler::NumberExpr.new(5.0),
-#   #       ),
-#   #       Compiler::BinaryExpr::Operation::Addition,
-#   #       Compiler::CallExpr.new(
-#   #         "sin", [Compiler::VariableExpr.new("x")] of Compiler::Expr
-#   #       ),
-#   #     ),
-#   #     Compiler::BinaryExpr::Operation::Division,
-#   #     Compiler::NumberExpr.new(1.0),
-#   #   )
-#   # ),
-#   Compiler::AssignmentExpr.new(
-#     "xy", Compiler::CallExpr.new("add2", [Compiler::VariableExpr.new("x"), Compiler::VariableExpr.new("y")] of Compiler::Expr),
-#   ),
-#   # Compiler::CallExpr.new("printf", [Compiler::StringExpr.new("%.16f\n"), Compiler::VariableExpr.new("z")] of Compiler::Expr),
-#   Compiler::CallExpr.new("printf", [Compiler::StringExpr.new("%.16f\n"), Compiler::VariableExpr.new("xy")] of Compiler::Expr),
-# ] of Compiler::Expr
-
 statements = [
   # Compiler::FunctionDefinitionStmt.new(
   #   "add2",
@@ -78,8 +46,10 @@ statements = [
     )
   ),
   Compiler::IfStmt.new(
-    Compiler::CallExpr.new(
-      "ile", [Compiler::VariableExpr.new("x"), Compiler::IntegerExpr.new(10)] of Compiler::Expr
+    Compiler::BinaryExpr.new(
+      Compiler::VariableExpr.new("x"),
+      Compiler::BinaryExpr::Operation::LessThan,
+      Compiler::IntegerExpr.new(10),
     ),
     [
       Compiler::ExpressionStmt.new(
@@ -90,8 +60,10 @@ statements = [
     ] of Compiler::Stmt,
     [
       Compiler::IfStmt.new(
-        Compiler::CallExpr.new(
-          "ile", [Compiler::VariableExpr.new("x"), Compiler::IntegerExpr.new(20)] of Compiler::Expr
+        Compiler::BinaryExpr.new(
+          Compiler::VariableExpr.new("x"),
+          Compiler::BinaryExpr::Operation::LessThan,
+          Compiler::IntegerExpr.new(20),
         ),
         [
           Compiler::ExpressionStmt.new(
@@ -247,25 +219,6 @@ statements = [
   # ),
 ] of Compiler::Stmt
 
-variables = {} of String => Compiler::Value
-functions = {
-  #   # "add2" => Compiler::Function.new(["x", "y"], Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Addition, Compiler::VariableExpr.new("y"))),
-} of String => Compiler::Function
-
-# expressions.each do |expression|
-#   expression.codegen variables, functions
-#   # if expression.is_a?(Compiler::AssignmentExpr)
-#   #   expression.codegen variables, functions
-#   #   pp "#{expression}"
-#   # else
-#   #   pp "#{expression} = #{expression.codegen variables, functions}"
-#   # end
-# end
-
-# statements.each do |statement|
-#   statement.codegen variables, functions
-# end
-
 generator = Compiler::CodeGenerator.new "main"
 
 sin_type = LLVM::Type.function([generator.ctx.double], generator.ctx.double)
@@ -346,13 +299,13 @@ generator.define_native_function "putInt", [generator.ctx.int64], generator.ctx.
   builder.ret ret
 end
 
-generator.define_native_function "ile", [generator.ctx.int64, generator.ctx.int64], generator.ctx.int1 do |generator, builder, function|
-  l, r = function.params
+# generator.define_native_function "ile", [generator.ctx.int64, generator.ctx.int64], generator.ctx.int1 do |generator, builder, function|
+#   l, r = function.params
 
-  ret = builder.icmp LLVM::IntPredicate::SLE, l, r, "iletmp"
+#   ret = builder.icmp LLVM::IntPredicate::SLE, l, r, "iletmp"
 
-  builder.ret ret
-end
+#   builder.ret ret
+# end
 
 id_type = LLVM::Type.function([generator.ctx.double, generator.ctx.double], generator.ctx.double)
 

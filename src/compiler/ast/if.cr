@@ -9,9 +9,6 @@ module Compiler
     def initialize(@condition, @then_branch, @else_branch)
     end
 
-    def codegen(variables : Hash(String, Value), functions : Hash(String, Function))
-    end
-
     def to_s(io : IO)
       io << "if (#{@condition}) then"
       then_branch.each do |branch_statement|
@@ -35,8 +32,8 @@ module Compiler
       builder.position_at_end basic_block
 
       then_basic_block = @function.basic_blocks.append "if_then"
-      else_basic_block = @function.basic_blocks.append "if else"
-      end_basic_block = @function.basic_blocks.append "if end"
+      else_basic_block = @function.basic_blocks.append "if_else"
+      end_basic_block = @function.basic_blocks.append "if_end"
 
       builder.cond cond, then_basic_block, else_basic_block
 
