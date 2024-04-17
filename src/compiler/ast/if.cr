@@ -27,7 +27,7 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, basic_block, stmt : IfStmt) : LLVM::BasicBlock
-      cond = generate builder, basic_block, stmt.condition
+      cond, _ = generate builder, basic_block, stmt.condition
 
       builder.position_at_end basic_block
 

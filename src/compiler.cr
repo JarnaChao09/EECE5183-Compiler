@@ -26,62 +26,105 @@ statements = [
   # Compiler::ExpressionStmt.new(
   #   Compiler::AssignmentExpr.new(
   #     # "x", Compiler::FloatExpr.new(5.5)
-  #     "x", Compiler::IntegerExpr.new(5)
+  #     "x", Compiler::IntegerExpr.new(15)
   #   )
   # ),
   # Compiler::ExpressionStmt.new(
   #   Compiler::AssignmentExpr.new(
   #     # "y", Compiler::IntegerExpr.new(4616189618054758400) # FP rep of 4.0
-  #     "y", Compiler::FloatExpr.new(4.0)
+  #     "y", Compiler::IntegerExpr.new(40)
+  #   )
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::CallExpr.new(
+  #     "printf", [Compiler::StringExpr.new("x : int = ")] of Compiler::Expr
+  #   )
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::AssignmentExpr.new(
+  #     "x", Compiler::CallExpr.new("getInt", [] of Compiler::Expr),
+  #   )
+  # ),
+  Compiler::ExpressionStmt.new(
+    Compiler::AssignmentExpr.new(
+      "x", Compiler::CallExpr.new(
+      "getBool", [] of Compiler::Expr
+    ),
+    )
+  ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::CallExpr.new(
+  #     "printf", [Compiler::StringExpr.new("y : int = ")] of Compiler::Expr
+  #   )
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::AssignmentExpr.new(
+  #     "y", Compiler::CallExpr.new("getInt", [] of Compiler::Expr),
+  #   )
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::AssignmentExpr.new(
+  #     "y", Compiler::BooleanExpr.new(true),
   #   )
   # ),
   Compiler::ExpressionStmt.new(
     Compiler::CallExpr.new(
-      "printf", [Compiler::StringExpr.new("x : int = ")] of Compiler::Expr
-    )
-  ),
-  Compiler::ExpressionStmt.new(
-    Compiler::AssignmentExpr.new(
-      "x", Compiler::CallExpr.new("getInt", [] of Compiler::Expr),
-    )
-  ),
-  Compiler::IfStmt.new(
-    Compiler::BinaryExpr.new(
+      "putBool", [Compiler::BinaryExpr.new(
       Compiler::VariableExpr.new("x"),
-      Compiler::BinaryExpr::Operation::LessThan,
-      Compiler::IntegerExpr.new(10),
-    ),
-    [
-      Compiler::ExpressionStmt.new(
-        Compiler::CallExpr.new(
-          "putInt", [Compiler::VariableExpr.new("x")] of Compiler::Expr
-        )
-      ),
-    ] of Compiler::Stmt,
-    [
-      Compiler::IfStmt.new(
-        Compiler::BinaryExpr.new(
-          Compiler::VariableExpr.new("x"),
-          Compiler::BinaryExpr::Operation::LessThan,
-          Compiler::IntegerExpr.new(20),
-        ),
-        [
-          Compiler::ExpressionStmt.new(
-            Compiler::CallExpr.new(
-              "putInt", [Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Multiplication, Compiler::IntegerExpr.new(2))] of Compiler::Expr
-            )
-          ),
-        ] of Compiler::Stmt,
-        [
-          Compiler::ExpressionStmt.new(
-            Compiler::CallExpr.new(
-              "putInt", [Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Multiplication, Compiler::IntegerExpr.new(3))] of Compiler::Expr
-            )
-          ),
-        ] of Compiler::Stmt,
-      ),
-    ] of Compiler::Stmt,
+      Compiler::BinaryExpr::Operation::BitwiseAnd,
+      Compiler::CallExpr.new(
+        "test",
+        [] of Compiler::Expr
+      )
+    )] of Compiler::Expr
+    )
   ),
+  # Compiler::IfStmt.new(
+  #   Compiler::BinaryExpr.new(
+  #     Compiler::VariableExpr.new("x"),
+  #     Compiler::BinaryExpr::Operation::LessThan,
+  #     Compiler::IntegerExpr.new(10),
+  #   ),
+  #   [
+  #     Compiler::ExpressionStmt.new(
+  #       Compiler::CallExpr.new(
+  #         "putInt", [Compiler::VariableExpr.new("x")] of Compiler::Expr
+  #       )
+  #     ),
+  #   ] of Compiler::Stmt,
+  #   [
+  #     Compiler::IfStmt.new(
+  #       Compiler::BinaryExpr.new(
+  #         Compiler::VariableExpr.new("x"),
+  #         Compiler::BinaryExpr::Operation::LessThan,
+  #         Compiler::IntegerExpr.new(20),
+  #       ),
+  #       [
+  #         Compiler::ExpressionStmt.new(
+  #           Compiler::CallExpr.new(
+  #             "putInt", [Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Multiplication, Compiler::IntegerExpr.new(2))] of Compiler::Expr
+  #           )
+  #         ),
+  #       ] of Compiler::Stmt,
+  #       [
+  #         Compiler::ExpressionStmt.new(
+  #           Compiler::CallExpr.new(
+  #             "putInt", [Compiler::BinaryExpr.new(Compiler::VariableExpr.new("x"), Compiler::BinaryExpr::Operation::Multiplication, Compiler::IntegerExpr.new(3))] of Compiler::Expr
+  #           )
+  #         ),
+  #       ] of Compiler::Stmt,
+  #     ),
+  #   ] of Compiler::Stmt,
+  # ),
+  # Compiler::ExpressionStmt.new(
+  #   Compiler::CallExpr.new(
+  #     "putInt", [Compiler::BinaryExpr.new(
+  #     Compiler::VariableExpr.new("x"),
+  #     Compiler::BinaryExpr::Operation::BitwiseAnd,
+  #     Compiler::VariableExpr.new("y"),
+  #   )] of Compiler::Expr,
+  #   )
+  # ),
   # Compiler::ExpressionStmt.new(
   #   Compiler::CallExpr.new(
   #     "printf", [Compiler::StringExpr.new("y : double = ")] of Compiler::Expr
@@ -273,6 +316,19 @@ generator.define_native_function "getFloat", [] of LLVM::Type, generator.ctx.dou
   builder.ret ret
 end
 
+generator.define_native_function "getBool", [] of LLVM::Type, generator.ctx.int1 do |generator, builder, function|
+  boolean_type = generator.ctx.int1
+
+  getInt_function = generator.mod.functions["getInt"]
+  getInt_function_type = generator.function_types["getInt"]
+
+  input = builder.call getInt_function_type, getInt_function, [] of LLVM::Value, "getInttmp"
+
+  ret = builder.icmp LLVM::IntPredicate::NE, input, generator.ctx.int64.const_int(0)
+
+  builder.ret ret
+end
+
 generator.define_native_function "putFloat", [generator.ctx.double], generator.ctx.int32 do |generator, builder, function|
   input_float = function.params[0]
 
@@ -295,6 +351,30 @@ generator.define_native_function "putInt", [generator.ctx.int64], generator.ctx.
   printf_function_type = generator.function_types["printf"]
 
   ret = builder.call printf_function_type, printf_function, [output_string, input_int], "printftmp"
+
+  builder.ret ret
+end
+
+generator.define_native_function "putBool", [generator.ctx.int1], generator.ctx.int32 do |generator, builder, function|
+  input_bool = function.params[0]
+
+  printf_function = generator.mod.functions["printf"]
+  printf_function_type = generator.function_types["printf"]
+
+  print_value = builder.select input_bool, builder.global_string_pointer("true\n"), builder.global_string_pointer("false\n")
+
+  ret = builder.call printf_function_type, printf_function, [print_value], "printftmp"
+
+  builder.ret ret
+end
+
+generator.define_native_function "test", [] of LLVM::Type, generator.ctx.int1 do |generator, builder, function|
+  printf_function = generator.mod.functions["printf"]
+  printf_function_type = generator.function_types["printf"]
+
+  builder.call printf_function_type, printf_function, [builder.global_string_pointer("didn't short circuit\n")], "printftmp"
+
+  ret = generator.ctx.int1.const_int 1
 
   builder.ret ret
 end

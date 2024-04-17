@@ -11,8 +11,8 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, basic_block, expr : ExpressionStmt) : LLVM::BasicBlock
-      generate(builder, basic_block, expr.expression)
-      basic_block
+      _, ret = generate(builder, basic_block, expr.expression)
+      ret
     end
   end
 end

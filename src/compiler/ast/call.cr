@@ -14,12 +14,14 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, expr : CallExpr) : LLVM::Value
+    def generate(builder, basic_block, expr : CallExpr) : {LLVM::Value, LLVM::BasicBlock}
       function_type = @function_types[expr.function]
       function_param_types = function_type.params_types
-      builder.call function_type, @mod.functions[expr.function], expr.arguments.map { |arg|
-        generate builder, basic_block, arg
-      }, "calltmp"
+      ret_block = basic_block
+      return {builder.call(function_type, @mod.functions[expr.function], expr.arguments.map { |arg|
+        call_arg, ret_block = generate builder, basic_block, arg
+        call_arg
+      }, "calltmp"), ret_block}
     end
   end
 end

@@ -13,8 +13,8 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, expr : StringExpr) : LLVM::Value
-      builder.global_string_pointer(expr.value)
+    def generate(builder, basic_block, expr : StringExpr) : {LLVM::Value, LLVM::BasicBlock}
+      return {builder.global_string_pointer(expr.value), basic_block}
     end
   end
 end
