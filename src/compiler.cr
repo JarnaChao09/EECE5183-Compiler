@@ -45,12 +45,10 @@ statements = [
   #     "x", Compiler::CallExpr.new("getInt", [] of Compiler::Expr),
   #   )
   # ),
-  Compiler::ExpressionStmt.new(
-    Compiler::AssignmentExpr.new(
-      "x", Compiler::CallExpr.new(
-      "getBool", [] of Compiler::Expr
-    ),
-    )
+  Compiler::AssignmentStmt.new(
+    "x", Compiler::CallExpr.new(
+    "getBool", [] of Compiler::Expr
+  ),
   ),
   # Compiler::ExpressionStmt.new(
   #   Compiler::CallExpr.new(
@@ -324,12 +322,12 @@ generator.define_native_function "getBool", [] of LLVM::Type, generator.ctx.int1
 
   input = builder.call getInt_function_type, getInt_function, [] of LLVM::Value, "getInttmp"
 
-  ret = builder.icmp LLVM::IntPredicate::NE, input, generator.ctx.int64.const_int(0)
+  ret = builder.icmp LLVM::IntPredicate::NE, input, generator.ctx.int64.const_int(0), "netmp"
 
   builder.ret ret
 end
 
-generator.define_native_function "putFloat", [generator.ctx.double], generator.ctx.int32 do |generator, builder, function|
+generator.define_native_function "putFloat", [generator.ctx.double], generator.ctx.int1 do |generator, builder, function|
   input_float = function.params[0]
 
   output_string = builder.global_string_pointer "%.16f\n"
@@ -337,12 +335,14 @@ generator.define_native_function "putFloat", [generator.ctx.double], generator.c
   printf_function = generator.mod.functions["printf"]
   printf_function_type = generator.function_types["printf"]
 
-  ret = builder.call printf_function_type, printf_function, [output_string, input_float], "printftmp"
+  printf_value = builder.call printf_function_type, printf_function, [output_string, input_float], "printftmp"
+
+  ret = builder.icmp LLVM::IntPredicate::SLT, printf_value, generator.ctx.int32.const_int(0), "slttmp"
 
   builder.ret ret
 end
 
-generator.define_native_function "putInt", [generator.ctx.int64], generator.ctx.int32 do |generator, builder, function|
+generator.define_native_function "putInt", [generator.ctx.int64], generator.ctx.int1 do |generator, builder, function|
   input_int = function.params[0]
 
   output_string = builder.global_string_pointer "%ld\n"
@@ -350,12 +350,14 @@ generator.define_native_function "putInt", [generator.ctx.int64], generator.ctx.
   printf_function = generator.mod.functions["printf"]
   printf_function_type = generator.function_types["printf"]
 
-  ret = builder.call printf_function_type, printf_function, [output_string, input_int], "printftmp"
+  printf_value = builder.call printf_function_type, printf_function, [output_string, input_int], "printftmp"
+
+  ret = builder.icmp LLVM::IntPredicate::SLT, printf_value, generator.ctx.int32.const_int(0), "slttmp"
 
   builder.ret ret
 end
 
-generator.define_native_function "putBool", [generator.ctx.int1], generator.ctx.int32 do |generator, builder, function|
+generator.define_native_function "putBool", [generator.ctx.int1], generator.ctx.int1 do |generator, builder, function|
   input_bool = function.params[0]
 
   printf_function = generator.mod.functions["printf"]
@@ -363,7 +365,9 @@ generator.define_native_function "putBool", [generator.ctx.int1], generator.ctx.
 
   print_value = builder.select input_bool, builder.global_string_pointer("true\n"), builder.global_string_pointer("false\n")
 
-  ret = builder.call printf_function_type, printf_function, [print_value], "printftmp"
+  printf_value = builder.call printf_function_type, printf_function, [print_value], "printftmp"
+
+  ret = builder.icmp LLVM::IntPredicate::SLT, printf_value, generator.ctx.int32.const_int(0), "slttmp"
 
   builder.ret ret
 end
@@ -393,17 +397,58 @@ func = generator.mod.functions.add "add2", id_type
 
 generator.function_types["add2"] = id_type
 
-generator.generate statements
+# generator.generate statements
+
+program = Compiler::Program.new(
+  "testprogram",
+  [Compiler::VariableDeclaration.new("test", Compiler::Type::Integer, true)] of Compiler::Decl,
+  [
+    # Compiler::AssignmentStmt.new(
+    #   "test", Compiler::IntegerExpr.new(10)
+    # ),
+    # Compiler::ExpressionStmt.new(
+    #   Compiler::CallExpr.new(
+    #     "putInt", [Compiler::VariableExpr.new("test")] of Compiler::Expr
+    #   )
+    # ),
+    Compiler::LoopStmt.new(
+      Compiler::AssignmentStmt.new(
+        "test", Compiler::IntegerExpr.new(0),
+      ),
+      Compiler::BinaryExpr.new(
+        Compiler::VariableExpr.new("test"),
+        Compiler::BinaryExpr::Operation::LessThan,
+        Compiler::IntegerExpr.new(3),
+      ),
+      [
+        Compiler::ExpressionStmt.new(
+          Compiler::CallExpr.new(
+            "putInt", [Compiler::VariableExpr.new("test")] of Compiler::Expr,
+          )
+        ),
+        Compiler::AssignmentStmt.new(
+          "test", Compiler::BinaryExpr.new(
+          Compiler::VariableExpr.new("test"),
+          Compiler::BinaryExpr::Operation::Addition,
+          Compiler::IntegerExpr.new(1),
+        )
+        ),
+      ] of Compiler::Stmt
+    ),
+  ] of Compiler::Stmt,
+)
+
+generator.generate program
 
 generator.mod.dump
 
 puts "========"
 
-generator.optimize
+# generator.optimize
 
-generator.mod.dump
+# generator.mod.dump
 
-puts "========"
+# puts "========"
 
 generator.mod.verify
 

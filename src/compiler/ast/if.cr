@@ -27,9 +27,9 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, basic_block, stmt : IfStmt) : LLVM::BasicBlock
-      cond, _ = generate builder, basic_block, stmt.condition
+      cond, cond_block = generate builder, basic_block, stmt.condition
 
-      builder.position_at_end basic_block
+      builder.position_at_end cond_block
 
       then_basic_block = @function.basic_blocks.append "if_then"
       else_basic_block = @function.basic_blocks.append "if_else"

@@ -35,6 +35,21 @@ module Compiler
       current_builder.ret @ctx.int32.const_int 0
     end
 
+    def generate(program : Compiler::Program)
+      current_builder = @ctx.new_builder
+      null_block = LLVM::BasicBlock.null
+
+      program.declarations.each do |decl|
+        if decl.is_global?
+          generate current_builder, null_block, decl
+        else
+          raise "all program declarations must be global"
+        end
+      end
+
+      generate program.body
+    end
+
     def define_native_function(name : String, types : Array(LLVM::Type), return_type : LLVM::Type, &)
       function_type = LLVM::Type.function(types, return_type)
       @function_types[name] = function_type

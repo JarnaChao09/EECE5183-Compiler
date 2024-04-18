@@ -1,20 +1,14 @@
-require "./expr"
+require "./stmt"
+require "./type"
 
 module Compiler
   class Function
-    property parameters : Array(String) # TODO add type checking to function prototypes
-    # property return_type : # TODO
-    property body : Expr # TDOO expand to multiline function bodies
+    property parameters : Array(String)
+    property parameter_types : Array(Type)
+    property return_type : Type
+    property body : Array(Stmt)
 
-    def initialize(@parameters, @body)
-    end
-
-    def call(arguments : Array(Value), variables : Hash(String, Value), functions : Hash(String, Function))
-      unless arguments.size == @parameters.size
-        raise "Incorrect number of arguments"
-      end
-
-      @body.codegen(variables.merge(Hash.zip(parameters, arguments)), functions)
+    def initialize(@parameters, @parameter_types, @return_type, @body)
     end
 
     def to_s(io : IO)

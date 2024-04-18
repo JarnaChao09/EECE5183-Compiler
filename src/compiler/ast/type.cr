@@ -18,7 +18,7 @@ module Compiler
       end
     end
 
-    def to_llvm_type(ctx)
+    def to_llvm_type(ctx) : LLVM::Type
       case self
       in .boolean?
         ctx.int1
@@ -28,6 +28,19 @@ module Compiler
         ctx.double
       in .string?
         ctx.pointer
+      end
+    end
+
+    def to_llvm_default_value(ctx) : LLVM::Value
+      case self
+      in .boolean?
+        ctx.int1.const_int 0
+      in .integer?
+        ctx.int64.const_int 0
+      in .double?
+        ctx.double.const_double 0.0
+      in .string?
+        ctx.pointer.null_pointer
       end
     end
   end

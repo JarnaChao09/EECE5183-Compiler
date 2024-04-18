@@ -1,7 +1,7 @@
-require "./expr"
+require "./stmt"
 
 module Compiler
-  class AssignmentExpr < Expr
+  class AssignmentStmt < Stmt
     property variable : String
     property initializer : Expr
 
@@ -14,11 +14,12 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, expr : AssignmentExpr) : {LLVM::Value, LLVM::BasicBlock}
+    def generate(builder, basic_block, expr : AssignmentStmt) : LLVM::BasicBlock
       # todo: fix to not always create a new variable on creation
       # todo: this is variable declaration codegen, not variable assignment
       start_value, _ = generate(builder, basic_block, expr.initializer)
-      alloca_location = builder.alloca start_value.type, expr.variable
+      alloca_location, _ = @variables[expr.variable]
+      # alloca_location = builder.alloca start_value.type, expr.variable
       # case start_value.type.kind
       # when LLVM::Type::Kind::Double
       #   puts "its a double"
@@ -27,8 +28,9 @@ module Compiler
       # else
       #   puts start_value.type.kind
       # end
-      @variables[expr.variable] = {alloca_location, start_value.type}
-      return {builder.store(start_value, alloca_location), basic_block}
+      # @variables[expr.variable] = {alloca_location, start_value.type}
+      builder.store start_value, alloca_location
+      return basic_block
     end
   end
 end
