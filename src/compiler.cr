@@ -280,6 +280,10 @@ func = generator.mod.functions.add "scanf", scanf_type
 
 generator.function_types["scanf"] = scanf_type
 
+# malloc_type = LLVM::Type.function([],)
+
+# func = generator.mod.functions.add "malloc",
+
 generator.define_native_function "getInt", [] of LLVM::Type, generator.ctx.int64 do |generator, builder, function|
   integer_type = generator.ctx.int64
 
@@ -372,6 +376,21 @@ generator.define_native_function "putBool", [generator.ctx.int1], generator.ctx.
   builder.ret ret
 end
 
+generator.define_native_function "putString", [generator.ctx.pointer], generator.ctx.int1 do |generator, builder, function|
+  input_string = function.params[0]
+
+  output_string = builder.global_string_pointer "%s\n"
+
+  printf_function = generator.mod.functions["printf"]
+  printf_function_type = generator.function_types["printf"]
+
+  printf_value = builder.call printf_function_type, printf_function, [output_string, input_string], "printftmp"
+
+  ret = builder.icmp LLVM::IntPredicate::SLT, printf_value, generator.ctx.int32.const_int(0), "slttmp"
+
+  builder.ret ret
+end
+
 generator.define_native_function "test", [] of LLVM::Type, generator.ctx.int1 do |generator, builder, function|
   printf_function = generator.mod.functions["printf"]
   printf_function_type = generator.function_types["printf"]
@@ -401,8 +420,50 @@ generator.function_types["add2"] = id_type
 
 program = Compiler::Program.new(
   "testprogram",
-  [Compiler::VariableDeclaration.new("test", Compiler::Type::Integer, true)] of Compiler::Decl,
   [
+    # Compiler::VariableDeclaration.new("test", Compiler::Type::Integer, true),
+    Compiler::VariableDeclaration.new("index", Compiler::Type::Integer, true),
+    Compiler::VariableDeclaration.new("value", Compiler::Type::Double, true),
+    Compiler::VariableDeclaration.new("test", Compiler::Type::Double, true, 4),
+  ] of Compiler::Decl,
+  [
+    Compiler::AssignmentStmt.new(
+      "index", Compiler::CallExpr.new("getInt", [] of Compiler::Expr)
+    ),
+    Compiler::AssignmentStmt.new(
+      "value", Compiler::CallExpr.new("getFloat", [] of Compiler::Expr)
+    ),
+    Compiler::IndexSetStmt.new(
+      "test", Compiler::VariableExpr.new("index"), Compiler::VariableExpr.new("value")
+    ),
+    Compiler::ExpressionStmt.new(
+      Compiler::CallExpr.new(
+        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(0))] of Compiler::Expr,
+      )
+    ),
+    Compiler::ExpressionStmt.new(
+      Compiler::CallExpr.new(
+        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(1))] of Compiler::Expr,
+      )
+    ),
+    Compiler::ExpressionStmt.new(
+      Compiler::CallExpr.new(
+        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(2))] of Compiler::Expr,
+      )
+    ),
+    Compiler::ExpressionStmt.new(
+      Compiler::CallExpr.new(
+        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(3))] of Compiler::Expr,
+      )
+    ),
+    # Compiler::AssignmentStmt.new(
+    #   "test", Compiler::StringExpr.new("hello world")
+    # ),
+    # Compiler::ExpressionStmt.new(
+    #   Compiler::CallExpr.new(
+    #     "putString", [Compiler::VariableExpr.new("test")] of Compiler::Expr,
+    #   )
+    # ),
     # Compiler::AssignmentStmt.new(
     #   "test", Compiler::IntegerExpr.new(10)
     # ),
@@ -411,30 +472,30 @@ program = Compiler::Program.new(
     #     "putInt", [Compiler::VariableExpr.new("test")] of Compiler::Expr
     #   )
     # ),
-    Compiler::LoopStmt.new(
-      Compiler::AssignmentStmt.new(
-        "test", Compiler::IntegerExpr.new(0),
-      ),
-      Compiler::BinaryExpr.new(
-        Compiler::VariableExpr.new("test"),
-        Compiler::BinaryExpr::Operation::LessThan,
-        Compiler::IntegerExpr.new(3),
-      ),
-      [
-        Compiler::ExpressionStmt.new(
-          Compiler::CallExpr.new(
-            "putInt", [Compiler::VariableExpr.new("test")] of Compiler::Expr,
-          )
-        ),
-        Compiler::AssignmentStmt.new(
-          "test", Compiler::BinaryExpr.new(
-          Compiler::VariableExpr.new("test"),
-          Compiler::BinaryExpr::Operation::Addition,
-          Compiler::IntegerExpr.new(1),
-        )
-        ),
-      ] of Compiler::Stmt
-    ),
+    # Compiler::LoopStmt.new(
+    #   Compiler::AssignmentStmt.new(
+    #     "test", Compiler::IntegerExpr.new(0),
+    #   ),
+    #   Compiler::BinaryExpr.new(
+    #     Compiler::VariableExpr.new("test"),
+    #     Compiler::BinaryExpr::Operation::LessThan,
+    #     Compiler::IntegerExpr.new(3),
+    #   ),
+    #   [
+    #     Compiler::ExpressionStmt.new(
+    #       Compiler::CallExpr.new(
+    #         "putInt", [Compiler::VariableExpr.new("test")] of Compiler::Expr,
+    #       )
+    #     ),
+    #     Compiler::AssignmentStmt.new(
+    #       "test", Compiler::BinaryExpr.new(
+    #       Compiler::VariableExpr.new("test"),
+    #       Compiler::BinaryExpr::Operation::Addition,
+    #       Compiler::IntegerExpr.new(1),
+    #     )
+    #     ),
+    #   ] of Compiler::Stmt
+    # ),
   ] of Compiler::Stmt,
 )
 
