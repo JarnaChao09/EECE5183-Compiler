@@ -48,6 +48,10 @@ module Compiler
           global_value = @mod.globals.add variable_declaration.variable_type.to_llvm_type(@ctx), variable_declaration.variable
           global_value.initializer = variable_declaration.variable_type.to_llvm_default_value(@ctx)
 
+          if variable_declaration.variable_type.string?
+            global_value.alignment = 8
+          end
+
           @variables[variable_declaration.variable] = {global_value, variable_declaration.variable_type.to_llvm_type(@ctx)}
         end
       else

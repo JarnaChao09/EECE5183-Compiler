@@ -27,7 +27,7 @@ module Compiler
       in .double?
         ctx.double
       in .string?
-        ctx.pointer
+        ctx.int8.pointer
       end
     end
 

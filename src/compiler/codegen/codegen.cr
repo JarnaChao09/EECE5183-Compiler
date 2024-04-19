@@ -6,6 +6,7 @@ module Compiler
     property variables : Hash(String, {LLVM::Value, LLVM::Type})
     property function_types : Hash(String, LLVM::Type)
     property target_machine : LLVM::TargetMachine
+    property _stdin : LLVM::Value
 
     def initialize(mod_name : String = "")
       {% if host_flag?(:aarch64) %}
@@ -19,6 +20,9 @@ module Compiler
       @variables = {} of String => {LLVM::Value, LLVM::Type}
       @function_types = {} of String => LLVM::Type
       @target_machine = LLVM::Target.first.create_target_machine(LLVM.default_target_triple)
+
+      @_stdin = mod.globals.add @ctx.void_pointer, "__stdinp" # TODO: should just be "stdin" but MacOS external pointer is different
+      @_stdin.alignment = 8
     end
 
     def generate(statements : Array(Compiler::Stmt))

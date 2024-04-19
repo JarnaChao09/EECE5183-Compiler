@@ -280,6 +280,12 @@ func = generator.mod.functions.add "scanf", scanf_type
 
 generator.function_types["scanf"] = scanf_type
 
+getline_type = LLVM::Type.function([generator.ctx.int8.pointer.pointer, generator.ctx.int64.pointer, generator.ctx.pointer], generator.ctx.int64)
+
+func = generator.mod.functions.add "getline", getline_type
+
+generator.function_types["getline"] = getline_type
+
 # malloc_type = LLVM::Type.function([],)
 
 # func = generator.mod.functions.add "malloc",
@@ -327,6 +333,45 @@ generator.define_native_function "getBool", [] of LLVM::Type, generator.ctx.int1
   input = builder.call getInt_function_type, getInt_function, [] of LLVM::Value, "getInttmp"
 
   ret = builder.icmp LLVM::IntPredicate::NE, input, generator.ctx.int64.const_int(0), "netmp"
+
+  builder.ret ret
+end
+
+generator.define_native_function "getString", [] of LLVM::Type, generator.ctx.int8.pointer do |generator, builder, function|
+  string_type = generator.ctx.int8.pointer
+
+  line = builder.alloca string_type         # , "line"
+  len = builder.alloca generator.ctx.int64  # , "len"
+  read = builder.alloca generator.ctx.int64 # , "read"
+
+  builder.store generator.ctx.pointer.null_pointer, line
+  store = builder.store generator.ctx.int64.const_int(0), len
+
+  # store.alignment = 8
+
+  _stdin = builder.load generator._stdin.type, generator._stdin
+
+  getline_function = generator.mod.functions["getline"]
+  getline_function_type = generator.function_types["getline"]
+
+  read_value = builder.call getline_function_type, getline_function, [line, len, _stdin] # , "getlinetmp"
+
+  store = builder.store read_value, read
+
+  # store.alignment = 8
+
+  line_access = builder.load string_type, line
+  read_value = builder.load generator.ctx.int64, read
+
+  # read_value.alignment = 8
+
+  read1 = builder.sub read_value, generator.ctx.int64.const_int(1)
+
+  newline_char = builder.gep generator.ctx.int8, line_access, read1
+
+  builder.store generator.ctx.int8.const_int(0), newline_char
+
+  ret = builder.load string_type, line
 
   builder.ret ret
 end
@@ -421,41 +466,49 @@ generator.function_types["add2"] = id_type
 program = Compiler::Program.new(
   "testprogram",
   [
-    # Compiler::VariableDeclaration.new("test", Compiler::Type::Integer, true),
-    Compiler::VariableDeclaration.new("index", Compiler::Type::Integer, true),
-    Compiler::VariableDeclaration.new("value", Compiler::Type::Double, true),
-    Compiler::VariableDeclaration.new("test", Compiler::Type::Double, true, 4),
+    Compiler::VariableDeclaration.new("test", Compiler::Type::String, true),
+    # Compiler::VariableDeclaration.new("index", Compiler::Type::Integer, true),
+    # Compiler::VariableDeclaration.new("value", Compiler::Type::Double, true),
+    # Compiler::VariableDeclaration.new("test", Compiler::Type::Double, true, 4),
   ] of Compiler::Decl,
   [
     Compiler::AssignmentStmt.new(
-      "index", Compiler::CallExpr.new("getInt", [] of Compiler::Expr)
-    ),
-    Compiler::AssignmentStmt.new(
-      "value", Compiler::CallExpr.new("getFloat", [] of Compiler::Expr)
-    ),
-    Compiler::IndexSetStmt.new(
-      "test", Compiler::VariableExpr.new("index"), Compiler::VariableExpr.new("value")
+      "test", Compiler::CallExpr.new("getString", [] of Compiler::Expr)
     ),
     Compiler::ExpressionStmt.new(
       Compiler::CallExpr.new(
-        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(0))] of Compiler::Expr,
+        "putString", [Compiler::VariableExpr.new("test")] of Compiler::Expr
       )
     ),
-    Compiler::ExpressionStmt.new(
-      Compiler::CallExpr.new(
-        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(1))] of Compiler::Expr,
-      )
-    ),
-    Compiler::ExpressionStmt.new(
-      Compiler::CallExpr.new(
-        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(2))] of Compiler::Expr,
-      )
-    ),
-    Compiler::ExpressionStmt.new(
-      Compiler::CallExpr.new(
-        "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(3))] of Compiler::Expr,
-      )
-    ),
+    # Compiler::AssignmentStmt.new(
+    #   "index", Compiler::CallExpr.new("getInt", [] of Compiler::Expr)
+    # ),
+    # Compiler::AssignmentStmt.new(
+    #   "value", Compiler::CallExpr.new("getFloat", [] of Compiler::Expr)
+    # ),
+    # Compiler::IndexSetStmt.new(
+    #   "test", Compiler::VariableExpr.new("index"), Compiler::VariableExpr.new("value")
+    # ),
+    # Compiler::ExpressionStmt.new(
+    #   Compiler::CallExpr.new(
+    #     "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(0))] of Compiler::Expr,
+    #   )
+    # ),
+    # Compiler::ExpressionStmt.new(
+    #   Compiler::CallExpr.new(
+    #     "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(1))] of Compiler::Expr,
+    #   )
+    # ),
+    # Compiler::ExpressionStmt.new(
+    #   Compiler::CallExpr.new(
+    #     "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(2))] of Compiler::Expr,
+    #   )
+    # ),
+    # Compiler::ExpressionStmt.new(
+    #   Compiler::CallExpr.new(
+    #     "putFloat", [Compiler::IndexGetExpr.new("test", Compiler::IntegerExpr.new(3))] of Compiler::Expr,
+    #   )
+    # ),
     # Compiler::AssignmentStmt.new(
     #   "test", Compiler::StringExpr.new("hello world")
     # ),
