@@ -13,9 +13,13 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, expr : VariableExpr) : {LLVM::Value, LLVM::BasicBlock}
+    def generate(builder, basic_block, expr : VariableExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
       variable, variable_type = @variables[expr.name]
-      return {builder.load(variable_type, variable, expr.name), basic_block}
+      if variable_type.kind == LLVM::Type::Kind::Array
+        return {variable, basic_block, variable_type}
+      else
+        return {builder.load(variable_type, variable, expr.name), basic_block, variable_type}
+      end
     end
   end
 end

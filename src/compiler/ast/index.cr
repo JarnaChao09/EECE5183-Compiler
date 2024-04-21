@@ -28,22 +28,24 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, index_get : IndexGetExpr) : {LLVM::Value, LLVM::BasicBlock}
+    def generate(builder, basic_block, index_get : IndexGetExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
+      # TODO: add bounds check
+
       index, block = generate builder, basic_block, index_get.index
 
       builder.position_at_end block
 
       alloca_location, var_type = @variables[index_get.variable]
 
-      puts var_type.array_size
-
       array_location = builder.gep var_type, alloca_location, @ctx.int64.const_int(0), index
       ret = builder.load var_type.element_type, array_location
 
-      return {ret, block}
+      return {ret, block, var_type.element_type}
     end
 
     def generate(builder, basic_block, index_set : IndexSetStmt) : LLVM::BasicBlock
+      # TODO: add bounds check
+
       init, block = generate builder, basic_block, index_set.initializer
 
       builder.position_at_end block

@@ -21,7 +21,15 @@ module Compiler
       @function_types = {} of String => LLVM::Type
       @target_machine = LLVM::Target.first.create_target_machine(LLVM.default_target_triple)
 
-      @_stdin = mod.globals.add @ctx.void_pointer, "__stdinp" # TODO: should just be "stdin" but MacOS external pointer is different
+      # TODO: MacOS external pointer is "__stdinp", linux is "stdin"
+      # could be moved to file descriptor impl (0 = stdin, 1 = stdout, 2 = stderr)
+      stdin_string = {% if host_flag?(:darwin) %}
+                       "__stdinp"
+                     {% else %}
+                       "stdin"
+                     {% end %}
+
+      @_stdin = mod.globals.add @ctx.void_pointer, stdin_string
       @_stdin.alignment = 8
     end
 
