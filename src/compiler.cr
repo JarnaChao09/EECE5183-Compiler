@@ -228,9 +228,12 @@ program = Compiler::Program.new(
     # Compiler::VariableDeclaration.new("value", Compiler::Type::Integer, true),
     # Compiler::VariableDeclaration.new("test", Compiler::Type::Integer, true, 4),
 
+    Compiler::VariableDeclaration.new("i", Compiler::Type::Integer, true),
+
     Compiler::VariableDeclaration.new("arr1", Compiler::Type::Integer, true, 2),
     Compiler::VariableDeclaration.new("arr2", Compiler::Type::Integer, true, 2),
     Compiler::VariableDeclaration.new("arr3", Compiler::Type::Integer, true, 2),
+    Compiler::VariableDeclaration.new("arr4", Compiler::Type::Integer, true, 2),
   ] of Compiler::Decl,
   [
     Compiler::IndexSetStmt.new(
@@ -245,13 +248,50 @@ program = Compiler::Program.new(
     Compiler::IndexSetStmt.new(
       "arr2", Compiler::IntegerExpr.new(1), Compiler::CallExpr.new("getInt", [] of Compiler::Expr)
     ),
+
     Compiler::AssignmentStmt.new(
       "arr3", Compiler::BinaryExpr.new(
       Compiler::VariableExpr.new("arr1"),
-      Compiler::BinaryExpr::Operation::Equal,
+      Compiler::BinaryExpr::Operation::Addition,
       Compiler::VariableExpr.new("arr2"),
     )
     ),
+
+    Compiler::LoopStmt.new(
+      Compiler::AssignmentStmt.new(
+        "i", Compiler::IntegerExpr.new(0)
+      ),
+      Compiler::BinaryExpr.new(
+        Compiler::VariableExpr.new("i"),
+        Compiler::BinaryExpr::Operation::LessThan,
+        Compiler::IntegerExpr.new(2),
+      ),
+      [
+        Compiler::IndexSetStmt.new(
+          "arr4",
+          Compiler::VariableExpr.new("i"),
+          Compiler::BinaryExpr.new(
+            Compiler::IndexGetExpr.new(
+              "arr1",
+              Compiler::VariableExpr.new("i")
+            ),
+            Compiler::BinaryExpr::Operation::Addition,
+            Compiler::IndexGetExpr.new(
+              "arr2",
+              Compiler::VariableExpr.new("i")
+            ),
+          )
+        ),
+        Compiler::AssignmentStmt.new(
+          "i", Compiler::BinaryExpr.new(
+          Compiler::VariableExpr.new("i"),
+          Compiler::BinaryExpr::Operation::Addition,
+          Compiler::IntegerExpr.new(1),
+        )
+        ),
+      ]
+    ),
+
     Compiler::ExpressionStmt.new(
       Compiler::CallExpr.new(
         "printf", [Compiler::StringExpr.new("\n")] of Compiler::Expr
@@ -285,6 +325,16 @@ program = Compiler::Program.new(
     Compiler::ExpressionStmt.new(
       Compiler::CallExpr.new(
         "putInt", [Compiler::IndexGetExpr.new("arr3", Compiler::IntegerExpr.new(1))] of Compiler::Expr
+      )
+    ),
+    Compiler::ExpressionStmt.new(
+      Compiler::CallExpr.new(
+        "putInt", [Compiler::IndexGetExpr.new("arr4", Compiler::IntegerExpr.new(0))] of Compiler::Expr
+      )
+    ),
+    Compiler::ExpressionStmt.new(
+      Compiler::CallExpr.new(
+        "putInt", [Compiler::IndexGetExpr.new("arr4", Compiler::IntegerExpr.new(1))] of Compiler::Expr
       )
     ),
 
@@ -407,11 +457,11 @@ generator.mod.dump
 
 puts "========"
 
-generator.optimize
+# generator.optimize
 
-generator.mod.dump
+# generator.mod.dump
 
-puts "========"
+# puts "========"
 
 generator.mod.verify
 
