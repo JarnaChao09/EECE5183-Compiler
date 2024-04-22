@@ -31,31 +31,53 @@ module Compiler
 
       builder.position_at_end cond_block
 
+      then_branch_ret = false
+      else_branch_ret = false
+
       then_basic_block = @function.basic_blocks.append "if_then"
       else_basic_block = @function.basic_blocks.append "if_else"
-      end_basic_block = @function.basic_blocks.append "if_end"
 
       builder.cond cond, then_basic_block, else_basic_block
 
       stmt.then_branch.each do |then_stmt|
         builder.position_at_end then_basic_block
 
+        if then_stmt.is_a? Compiler::ReturnStmt
+          then_branch_ret = true
+        end
+
         then_basic_block = generate builder, then_basic_block, then_stmt
       end
-
-      builder.position_at_end then_basic_block
-      builder.br end_basic_block
 
       stmt.else_branch.each do |else_stmt|
         builder.position_at_end else_basic_block
 
+        if else_stmt.is_a? Compiler::ReturnStmt
+          else_branch_ret = true
+        end
+
         else_basic_block = generate builder, else_basic_block, else_stmt
       end
 
-      builder.position_at_end else_basic_block
-      builder.br end_basic_block
+      if then_branch_ret && else_branch_ret
+        return else_basic_block
+      elsif then_branch_ret && stmt.else_branch.empty?
+        return else_basic_block
+      else
+        end_basic_block = @function.basic_blocks.append "if_end"
 
-      end_basic_block
+        if !then_branch_ret
+          builder.position_at_end then_basic_block
+          builder.br end_basic_block
+        end
+
+        if !else_branch_ret
+          builder.position_at_end else_basic_block
+          builder.br end_basic_block
+        end
+
+        return end_basic_block
+      end
     end
   end
 end

@@ -18,7 +18,7 @@ module Compiler
       # todo: fix to not always create a new variable on creation
       # todo: this is variable declaration codegen, not variable assignment
       start_value, block, start_type = generate(builder, basic_block, expr.initializer)
-      alloca_location, _ = @variables[expr.variable]
+      alloca_location, _ = @variables[expr.variable]? || @global_variables[expr.variable]
 
       # alloca_location = builder.alloca start_value.type, expr.variable
       # case start_value.type.kind

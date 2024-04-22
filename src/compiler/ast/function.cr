@@ -6,9 +6,10 @@ module Compiler
     property parameters : Array(String)
     property parameter_types : Array(Type)
     property return_type : Type
+    property declarations : Array(Decl)
     property body : Array(Stmt)
 
-    def initialize(@parameters, @parameter_types, @return_type, @body)
+    def initialize(@parameters, @parameter_types, @return_type, @declarations, @body)
     end
 
     def to_s(io : IO)

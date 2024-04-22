@@ -3,8 +3,13 @@ module Compiler
     property ctx : LLVM::Context
     property mod : LLVM::Module
     property function : LLVM::Function
+    property function_name : String
+    property function_names : Hash(String, String)
+    property global_function_names : Hash(String, String)
     property variables : Hash(String, {LLVM::Value, LLVM::Type})
+    property global_variables : Hash(String, {LLVM::Value, LLVM::Type})
     property function_types : Hash(String, LLVM::Type)
+    property global_function_types : Hash(String, LLVM::Type)
     property target_machine : LLVM::TargetMachine
     property _stdin : LLVM::Value
 
@@ -15,10 +20,20 @@ module Compiler
         LLVM.init_x86
       {% end %}
       @ctx = LLVM::Context.new
+
       @mod = @ctx.new_module(mod_name)
+
       @function = @mod.functions.add "main", [] of LLVM::Type, @ctx.int32
+      @function_name = ""
+      @function_names = {} of String => String
+      @global_function_names = {} of String => String
+
       @variables = {} of String => {LLVM::Value, LLVM::Type}
+      @global_variables = {} of String => {LLVM::Value, LLVM::Type}
+
       @function_types = {} of String => LLVM::Type
+      @global_function_types = {} of String => LLVM::Type
+
       @target_machine = LLVM::Target.first.create_target_machine(LLVM.default_target_triple)
 
       # TODO: MacOS external pointer is "__stdinp", linux is "stdin"
@@ -48,6 +63,8 @@ module Compiler
     end
 
     def generate(program : Compiler::Program)
+      @function_name = program.program_name
+
       current_builder = @ctx.new_builder
       null_block = LLVM::BasicBlock.null
 
@@ -62,14 +79,26 @@ module Compiler
       generate program.body
     end
 
-    def define_native_function(name : String, types : Array(LLVM::Type), return_type : LLVM::Type, &)
-      function_type = LLVM::Type.function(types, return_type)
-      @function_types[name] = function_type
+    def declare_native_function(name : String, types : Array(LLVM::Type), return_type : LLVM::Type, varargs : Bool = false) : Nil
+      function_type = LLVM::Type.function(types, return_type, varargs)
+      @global_function_types[name] = function_type
+      @global_function_names[name] = name
+      @mod.functions.add name, function_type
+    end
+
+    def define_native_function(name : String, types : Array(LLVM::Type), return_type : LLVM::Type, varargs : Bool = false, &)
+      function_type = LLVM::Type.function(types, return_type, varargs)
+      @global_function_types[name] = function_type
+      @global_function_names[name] = name
       @mod.functions.add name, function_type do |function|
         function.basic_blocks.append do |builder|
           yield self, builder, function
         end
       end
+    end
+
+    def get_function(name : String) : {LLVM::Function, LLVM::Type}
+      return {@mod.functions[name], @function_types[name]? || @global_function_types[name]}
     end
 
     def optimize(level : String = "default<O3>")

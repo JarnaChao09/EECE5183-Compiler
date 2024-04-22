@@ -35,7 +35,7 @@ module Compiler
 
       builder.position_at_end block
 
-      alloca_location, var_type = @variables[index_get.variable]
+      alloca_location, var_type = @variables[index_get.variable]? || @global_variables[index_get.variable]
 
       array_location = builder.gep var_type, alloca_location, @ctx.int64.const_int(0), index
       ret = builder.load var_type.element_type, array_location
@@ -54,7 +54,7 @@ module Compiler
 
       builder.position_at_end block
 
-      alloca_location, var_type = @variables[index_set.variable]
+      alloca_location, var_type = @variables[index_set.variable]? || @global_variables[index_set.variable]
 
       array_location = builder.gep var_type, alloca_location, @ctx.int64.const_int(0), index
 

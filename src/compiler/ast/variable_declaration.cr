@@ -43,7 +43,7 @@ module Compiler
           global_value = @mod.globals.add llvm_array_type, variable_declaration.variable
           global_value.initializer = llvm_type.const_array init_array
 
-          @variables[variable_declaration.variable] = {global_value, llvm_array_type}
+          @global_variables[variable_declaration.variable] = {global_value, llvm_array_type}
         else
           global_value = @mod.globals.add variable_declaration.variable_type.to_llvm_type(@ctx), variable_declaration.variable
           global_value.initializer = variable_declaration.variable_type.to_llvm_default_value(@ctx)
@@ -52,7 +52,7 @@ module Compiler
             global_value.alignment = 8
           end
 
-          @variables[variable_declaration.variable] = {global_value, variable_declaration.variable_type.to_llvm_type(@ctx)}
+          @global_variables[variable_declaration.variable] = {global_value, variable_declaration.variable_type.to_llvm_type(@ctx)}
         end
       else
         builder.position_at_end basic_block

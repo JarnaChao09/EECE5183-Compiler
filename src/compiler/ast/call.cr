@@ -15,10 +15,15 @@ module Compiler
 
   class Compiler::CodeGenerator
     def generate(builder, basic_block, expr : CallExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
-      function_type = @function_types[expr.function]
+      mangled_function_name = @function_names[expr.function]? || @global_function_names[expr.function]
+
+      function_type = @function_types[mangled_function_name]? || @global_function_types[mangled_function_name]
+
       function_param_types = function_type.params_types
+
       ret_block = basic_block
-      return {builder.call(function_type, @mod.functions[expr.function], expr.arguments.map { |arg|
+
+      return {builder.call(function_type, @mod.functions[mangled_function_name], expr.arguments.map { |arg|
         call_arg, ret_block = generate builder, basic_block, arg
         call_arg
       }, "calltmp"), ret_block, function_type.return_type}
