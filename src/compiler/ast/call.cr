@@ -23,10 +23,15 @@ module Compiler
 
       ret_block = basic_block
 
-      return {builder.call(function_type, @mod.functions[mangled_function_name], expr.arguments.map { |arg|
+      args = expr.arguments.map do |arg|
+        builder.position_at_end ret_block
         call_arg, ret_block = generate builder, basic_block, arg
         call_arg
-      }, "calltmp"), ret_block, function_type.return_type}
+      end
+
+      builder.position_at_end ret_block
+
+      return {builder.call(function_type, @mod.functions[mangled_function_name], args, "calltmp"), ret_block, function_type.return_type}
     end
   end
 end
