@@ -74,11 +74,7 @@ module Compiler
     end
 
     def generate(builder, basic_block, index_set : IndexSetStmt) : LLVM::BasicBlock
-      init, block = generate builder, basic_block, index_set.initializer
-
-      builder.position_at_end block
-
-      index, block = generate builder, block, index_set.index
+      index, block = generate builder, basic_block, index_set.index
 
       builder.position_at_end block
 
@@ -115,6 +111,10 @@ module Compiler
       builder.br index_block
 
       builder.position_at_end index_block
+
+      init, block = generate builder, index_block, index_set.initializer
+
+      builder.position_at_end block
 
       array_location = builder.gep var_type, alloca_location, @ctx.int64.const_int(0), index
 

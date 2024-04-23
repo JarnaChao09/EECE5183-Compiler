@@ -495,6 +495,9 @@ program = Compiler::Program.new(
     Compiler::IndexSetStmt.new(
       "arr5", Compiler::IntegerExpr.new(1), Compiler::CallExpr.new("getFloat", [] of Compiler::Expr)
     ),
+    Compiler::IndexSetStmt.new(
+      "arr5", Compiler::CallExpr.new("getInteger", [] of Compiler::Expr), Compiler::CallExpr.new("getFloat", [] of Compiler::Expr)
+    ),
     # Compiler::IndexSetStmt.new(
     #   "arrb", Compiler::IntegerExpr.new(0), Compiler::CallExpr.new("getBool", [] of Compiler::Expr)
     # ),
