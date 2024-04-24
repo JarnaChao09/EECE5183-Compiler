@@ -23,7 +23,7 @@ module Compiler
     end
 
     def to_s(io : IO)
-      io << @variable << "[" << @index << "]"
+      io << @variable << "[" << @index << "]" << " := " << @initializer
     end
   end
 
@@ -120,7 +120,7 @@ module Compiler
 
       builder.store init, array_location
 
-      return index_block
+      return block
     end
   end
 end

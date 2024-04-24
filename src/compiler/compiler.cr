@@ -1,4 +1,5 @@
 require "./scanner/*"
+require "./parser/*"
 require "./ast/*"
 require "./codegen/*"
 require "./runtime/*"

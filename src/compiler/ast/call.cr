@@ -25,7 +25,7 @@ module Compiler
 
       args = expr.arguments.map do |arg|
         builder.position_at_end ret_block
-        call_arg, ret_block = generate builder, basic_block, arg
+        call_arg, ret_block = generate builder, ret_block, arg
         call_arg
       end
 

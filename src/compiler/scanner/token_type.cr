@@ -10,10 +10,10 @@ module Compiler
     Variable
     Global
 
-    Integer
-    Float
-    String
-    Boolean
+    # Integer
+    # Float
+    # String
+    # Boolean
 
     If
     Then

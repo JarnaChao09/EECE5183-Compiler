@@ -12,7 +12,7 @@ module Compiler
         io << case self
         in .negation?
           "-"
-        in .bit_not?
+        in .bitwise_not?
           "!"
         end
       end

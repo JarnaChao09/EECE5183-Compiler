@@ -176,13 +176,11 @@ module Compiler
          .bitwise_or?
         raise "unreachable"
       in .equal?
-        strcmp_function = @mod.functions["strcmp"]
-        strcmp_function_type = @function_types["strcmp"]
+        strcmp_function, strcmp_function_type = get_function "strcmp"
         cmp = builder.call strcmp_function_type, strcmp_function, [l, r], "cmptmp"
         builder.icmp LLVM::IntPredicate::EQ, cmp, @ctx.int32.const_int(0), "netmp"
       in .not_equal?
-        strcmp_function = @mod.functions["strcmp"]
-        strcmp_function_type = @function_types["strcmp"]
+        strcmp_function, strcmp_function_type = get_function "strcmp"
         cmp = builder.call strcmp_function_type, strcmp_function, [l, r], "cmptmp"
         builder.icmp LLVM::IntPredicate::NE, cmp, @ctx.int32.const_int(0), "netmp"
       end

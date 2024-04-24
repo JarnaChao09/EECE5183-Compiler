@@ -14,7 +14,7 @@ module Compiler
 
     def initialize(@source)
       @line_count = 1
-      @column_count = 0
+      @column_count = 1
       @start = 0
       @current = 0
 
@@ -28,16 +28,18 @@ module Compiler
         "end"       => TokenType::End,
         "variable"  => TokenType::Variable,
         "global"    => TokenType::Global,
-        "integer"   => TokenType::Integer,
-        "float"     => TokenType::Float,
-        "string"    => TokenType::String,
-        "bool"      => TokenType::Boolean,
+        "integer"   => TokenType::Identifier,
+        "float"     => TokenType::Identifier,
+        "string"    => TokenType::Identifier,
+        "bool"      => TokenType::Identifier,
         "if"        => TokenType::If,
         "then"      => TokenType::Then,
         "else"      => TokenType::Else,
         "for"       => TokenType::For,
         "return"    => TokenType::Return,
         "not"       => TokenType::Not,
+        "true"      => TokenType::True,
+        "false"     => TokenType::False,
       }
     end
 
@@ -46,8 +48,6 @@ module Compiler
         while is_not_at_end?
           @tokens << scan_token
         end
-
-        @tokens << Token.new TokenType::EOF, "", @line_count, @column_count
       end
 
       @tokens

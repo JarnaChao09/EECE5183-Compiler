@@ -15,6 +15,10 @@ module Compiler
     end
 
     def to_s(io : IO)
+      if is_global?
+        io << "global "
+      end
+
       io << @name << @function
     end
   end

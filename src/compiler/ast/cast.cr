@@ -9,14 +9,17 @@ module Compiler
     end
 
     def to_s(io : IO)
-      io << "cast<#{@casted_type.kind}>(#{@expression})"
+      io << "cast<#{@casted_type}>(#{@expression})"
     end
   end
 
   class Compiler::CodeGenerator
     def generate(builder, basic_block, expr : CastExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
       value, basic_block = generate builder, basic_block, expr.expression
+      builder.position_at_end basic_block
+
       llvm_casted_type = expr.casted_type.to_llvm_type @ctx
+
       return case {value.type.kind, llvm_casted_type.kind}
       in {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Double}
         {builder.si2fp(value, llvm_casted_type, "casttmp"), basic_block, llvm_casted_type}

@@ -17,7 +17,11 @@ module Compiler
       parameters.each do |parameter|
         io << parameter
       end
-      io << ") " << @body
+      io << ")\n"
+
+      body.each do |stmt|
+        io << "    " << stmt << "\n"
+      end
     end
   end
 end

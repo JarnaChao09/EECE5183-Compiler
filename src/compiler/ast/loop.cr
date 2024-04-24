@@ -4,7 +4,7 @@ require "./expr"
 
 module Compiler
   class LoopStmt < Stmt
-    property initializer : AssignmentStmt
+    property initializer : Stmt
     property condition : Expr
     property body : Array(Stmt)
 
@@ -12,7 +12,7 @@ module Compiler
     end
 
     def to_s(io : IO)
-      io << "for(" << @initializer << "; " << @condition << ")"
+      io << "for(" << @initializer << "; " << @condition << ")\n"
 
       body.each do |stmt|
         io << "    " << stmt << "\n"
@@ -25,6 +25,8 @@ module Compiler
   class Compiler::CodeGenerator
     def generate(builder, basic_block, loop_stmt : LoopStmt) : LLVM::BasicBlock
       assignment_block = generate builder, basic_block, loop_stmt.initializer
+
+      builder.position_at_end assignment_block
 
       cond_block = @function.basic_blocks.append "for_cond"
       body_block = @function.basic_blocks.append "for_body"

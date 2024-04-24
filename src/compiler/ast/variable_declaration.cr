@@ -16,7 +16,7 @@ module Compiler
     end
 
     def to_s(io : IO)
-      if is_global
+      if is_global?
         io << "global "
       end
 
