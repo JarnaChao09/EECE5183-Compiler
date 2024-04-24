@@ -112,13 +112,22 @@ generator.declare_native_function "sqrt", [generator.ctx.double], generator.ctx.
 
 generator.declare_native_function "printf", [generator.ctx.int8.pointer], generator.ctx.int32, varargs = true
 
-generator.declare_native_function "scanf", [generator.ctx.int8.pointer], generator.ctx.int32, varargs = true
+scanf_name = {% if host_flag?(:darwin) %}
+               "scanf"
+             {% else %}
+               "__isoc99_scanf"
+             {% end %}
+
+generator.declare_native_function scanf_name, [generator.ctx.int8.pointer], generator.ctx.int32, varargs = true
+generator.global_function_names["scanf"] = scanf_name
 
 generator.declare_native_function "getline", [generator.ctx.int8.pointer.pointer, generator.ctx.int64.pointer, generator.ctx.pointer], generator.ctx.int64
 
 generator.declare_native_function "strcmp", [generator.ctx.int8.pointer, generator.ctx.int8.pointer], generator.ctx.int32
 
 generator.declare_native_function "exit", [generator.ctx.int32], generator.ctx.void
+
+generator.declare_native_function "getchar", [] of LLVM::Type, generator.ctx.int32
 
 generator.define_native_function "oobe", [generator.ctx.int64, generator.ctx.int64], generator.ctx.void do |generator, builder, function|
   input_index, input_size = function.params
@@ -135,6 +144,52 @@ generator.define_native_function "oobe", [generator.ctx.int64, generator.ctx.int
   builder.unreachable
 end
 
+generator.define_native_function "flush", [] of LLVM::Type, generator.ctx.void do |generator, builder, function|
+  c = builder.alloca generator.ctx.int32
+
+  while_cond = function.basic_blocks.append
+  and_rhs = function.basic_blocks.append
+  and_end = function.basic_blocks.append
+  while_body = function.basic_blocks.append
+  while_end = function.basic_blocks.append
+
+  builder.br while_cond
+
+  builder.position_at_end while_cond
+
+  getchar_function, getchar_function_type = generator.get_function "getchar"
+
+  char = builder.call getchar_function_type, getchar_function, [] of LLVM::Value
+
+  builder.store char, c
+
+  cmp1 = builder.icmp LLVM::IntPredicate::NE, char, generator.ctx.int32.const_int(10)
+
+  builder.cond cmp1, and_rhs, and_end
+
+  builder.position_at_end and_rhs
+
+  tmp = builder.load generator.ctx.int32, c
+
+  cmp2 = builder.icmp LLVM::IntPredicate::NE, char, generator.ctx.int32.const_int(-1)
+
+  builder.br and_end
+
+  builder.position_at_end and_end
+
+  tmp1 = builder.phi generator.ctx.int1, [while_cond, and_rhs], [generator.ctx.int1.const_int(0), cmp2]
+
+  builder.cond tmp1, while_body, while_end
+
+  builder.position_at_end while_body
+
+  builder.br while_cond
+
+  builder.position_at_end while_end
+
+  builder.ret
+end
+
 generator.define_native_function "_sqrt", [generator.ctx.int64], generator.ctx.double do |generator, builder, function|
   input_int = function.params[0]
 
@@ -146,6 +201,8 @@ generator.define_native_function "_sqrt", [generator.ctx.int64], generator.ctx.d
 
   builder.ret ret
 end
+# overriding sqrt in the global function names
+# lose access to double sqrt(double)
 generator.global_function_names["sqrt"] = "_sqrt"
 
 generator.define_native_function "getinteger", [] of LLVM::Type, generator.ctx.int64 do |generator, builder, function|
@@ -153,11 +210,15 @@ generator.define_native_function "getinteger", [] of LLVM::Type, generator.ctx.i
 
   integer_var = builder.alloca integer_type, "getInttmp"
 
-  input_string = builder.global_string_pointer "%ld\n"
+  input_string = builder.global_string_pointer "%lld"
 
   scanf_function, scanf_function_type = generator.get_function "scanf"
 
   builder.call scanf_function_type, scanf_function, [input_string, integer_var], "scanftmp"
+
+  flush_function, flush_function_type = generator.get_function "flush"
+
+  builder.call flush_function_type, flush_function, [] of LLVM::Value
 
   ret = builder.load integer_type, integer_var
 
@@ -169,11 +230,15 @@ generator.define_native_function "getfloat", [] of LLVM::Type, generator.ctx.dou
 
   float_var = builder.alloca float_type, "getFloattmp"
 
-  input_string = builder.global_string_pointer "%lf\n"
+  input_string = builder.global_string_pointer "%lf"
 
   scanf_function, scanf_function_type = generator.get_function "scanf"
 
   builder.call scanf_function_type, scanf_function, [input_string, float_var], "scanftmp"
+
+  flush_function, flush_function_type = generator.get_function "flush"
+
+  builder.call flush_function_type, flush_function, [] of LLVM::Value
 
   ret = builder.load float_type, float_var
 

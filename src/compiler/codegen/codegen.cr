@@ -97,7 +97,8 @@ module Compiler
       end
     end
 
-    def get_function(name : String) : {LLVM::Function, LLVM::Type}
+    def get_function(unmangled_name : String) : {LLVM::Function, LLVM::Type}
+      name = @function_names[unmangled_name]? || @global_function_names[unmangled_name]
       return {@mod.functions[name], @function_types[name]? || @global_function_types[name]}
     end
 
