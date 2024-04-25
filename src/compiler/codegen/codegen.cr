@@ -6,8 +6,8 @@ module Compiler
     property function_name : String
     property function_names : Hash(String, String)
     property global_function_names : Hash(String, String)
-    property variables : Hash(String, {LLVM::Value, LLVM::Type})
-    property global_variables : Hash(String, {LLVM::Value, LLVM::Type})
+    property variables : Hash(String, {LLVM::Value, Type})
+    property global_variables : Hash(String, {LLVM::Value, Type})
     property function_types : Hash(String, LLVM::Type)
     property global_function_types : Hash(String, LLVM::Type)
     property target_machine : LLVM::TargetMachine
@@ -28,8 +28,8 @@ module Compiler
       @function_names = {} of String => String
       @global_function_names = {} of String => String
 
-      @variables = {} of String => {LLVM::Value, LLVM::Type}
-      @global_variables = {} of String => {LLVM::Value, LLVM::Type}
+      @variables = {} of String => {LLVM::Value, Type}
+      @global_variables = {} of String => {LLVM::Value, Type}
 
       @function_types = {} of String => LLVM::Type
       @global_function_types = {} of String => LLVM::Type

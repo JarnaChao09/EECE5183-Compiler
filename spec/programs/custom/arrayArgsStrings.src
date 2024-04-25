@@ -1,0 +1,32 @@
+program array_args is
+    variable tmp : bool;
+    variable arr : string[3];
+
+    procedure stuff : bool(variable x : string[3])
+        variable s : string;
+    begin
+        tmp := putstring(x[0]);
+        tmp := putstring(x[1]);
+        tmp := putstring(x[2]);
+
+        s := getstring();
+
+        tmp := putstring("Filling with");
+        tmp := putstring(s);
+
+        tmp := putstring(x[0]);
+        tmp := putstring(x[1]);
+        tmp := putstring(x[2]);
+        tmp := putstring(arr[0]);
+        tmp := putstring(arr[1]);
+        tmp := putstring(arr[2]);
+
+        return true;
+    end procedure;
+begin
+    arr[0] := "Hello world";
+    arr[1] := getstring();
+    arr[2] := "Do not try it";
+
+    tmp := stuff(arr);
+end program.

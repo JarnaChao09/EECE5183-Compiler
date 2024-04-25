@@ -94,17 +94,20 @@ file = File.read(rel_file_path)
 
 scanner = Compiler::Scanner.new file
 
-scanner.tokens.each do |token|
-  puts token
-end
+# scanner.tokens.each do |token|
+#   puts token
+# end
 
 parser = Compiler::Parser.new scanner.tokens
 
 program = parser.parse
 
-puts program
+puts parser.variables
+puts parser.global_variables
+puts parser.functions
+puts parser.global_functions
 
-# exit
+exit
 
 generator = Compiler::CodeGenerator.new "main"
 
@@ -359,6 +362,32 @@ generator.define_native_function "test", [] of LLVM::Type, generator.ctx.int1 do
   ret = generator.ctx.int1.const_int 1
 
   builder.ret ret
+end
+
+generator.generate program
+
+# exit
+
+generator.mod.dump
+
+# File.open("test.ll", "w") do |file|
+#   generator.mod.to_s file
+# end
+
+puts "========"
+
+# generator.optimize
+
+# generator.mod.dump
+
+# puts "========"
+
+generator.mod.verify
+
+LLVM::JITCompiler.new generator.mod do |jit|
+  func_ptr = jit.get_pointer_to_global(generator.function)
+  func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
+  puts "exited with #{func_proc.call}"
 end
 
 # generator.define_native_function "ile", [generator.ctx.int64, generator.ctx.int64], generator.ctx.int1 do |generator, builder, function|
@@ -1061,26 +1090,6 @@ end
 #     # ),
 #   ] of Compiler::Stmt,
 # )
-
-generator.generate program
-
-generator.mod.dump
-
-puts "========"
-
-# generator.optimize
-
-# generator.mod.dump
-
-# puts "========"
-
-generator.mod.verify
-
-LLVM::JITCompiler.new generator.mod do |jit|
-  func_ptr = jit.get_pointer_to_global(generator.function)
-  func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
-  puts "exited with #{func_proc.call}"
-end
 
 # LLVM.init_aarch64
 

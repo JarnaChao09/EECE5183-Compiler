@@ -14,19 +14,19 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, expr : CastExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
-      value, basic_block = generate builder, basic_block, expr.expression
+    def generate(builder, basic_block, expr : CastExpr) : {LLVM::Value, LLVM::BasicBlock, Type}
+      value, basic_block, value_type = generate builder, basic_block, expr.expression
       builder.position_at_end basic_block
 
-      llvm_casted_type = expr.casted_type.to_llvm_type @ctx
+      llvm_casted_type = expr.casted_type.type.to_llvm_type @ctx
 
       return case {value.type.kind, llvm_casted_type.kind}
       in {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Double}
-        {builder.si2fp(value, llvm_casted_type, "casttmp"), basic_block, llvm_casted_type}
+        {builder.si2fp(value, llvm_casted_type, "casttmp"), basic_block, expr.casted_type}
       in {LLVM::Type::Kind::Double, LLVM::Type::Kind::Integer}
-        {builder.fp2si(value, llvm_casted_type, "casttmp"), basic_block, llvm_casted_type}
+        {builder.fp2si(value, llvm_casted_type, "casttmp"), basic_block, expr.casted_type}
       in {_, _}
-        {value, basic_block, value.type}
+        {value, basic_block, value_type}
       end
     end
   end

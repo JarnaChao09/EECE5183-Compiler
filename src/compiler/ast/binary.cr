@@ -121,14 +121,15 @@ module Compiler
       in .addition?,
          .subtraction?,
          .multiplication?,
-         .division?,
-         .less_than?,
+         .division?
+        raise "unreachable"
+      in .less_than?,
          .less_equal?,
          .greater_than?,
          .greater_equal?,
          .equal?,
          .not_equal?
-        raise "unreachable"
+        raise "todo"
       in .bitwise_and?
         rhs = @function.basic_blocks.append "and_rhs"
         and = @function.basic_blocks.append "and_end"
@@ -299,18 +300,20 @@ module Compiler
       current_block,
       operation : BinaryExpr::Operation,
       l : LLVM::Value,
-      l_type : LLVM::Type,
+      l_type : Type,
       r : LLVM::Value,
-      r_type : LLVM::Type
-    ) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
-      if l_type.kind == LLVM::Type::Kind::Array && r_type.kind == LLVM::Type::Kind::Array
-        builder_operation = build_builder_operation builder, operation, l_type.element_type.kind
-        if l_type.array_size != l_type.array_size
+      r_type : Type
+    ) : {LLVM::Value, LLVM::BasicBlock, Type}
+      llvm_l_type = l_type.to_llvm_type @ctx
+      llvm_r_type = r_type.to_llvm_type @ctx
+      if llvm_l_type.kind == LLVM::Type::Kind::Array && llvm_r_type.kind == LLVM::Type::Kind::Array
+        builder_operation = build_builder_operation builder, operation, llvm_l_type.element_type.kind
+        if llvm_l_type.array_size != llvm_l_type.array_size
           raise "array sizes must match (should be unreachable)"
         end
 
         # TODO: should casting be moved here? should cast nodes handle arrays?
-        if l_type.element_type.kind != r_type.element_type.kind
+        if llvm_l_type.element_type.kind != llvm_r_type.element_type.kind
           raise "arrays must be of the same type (should be unreachable)"
         end
 
@@ -321,7 +324,7 @@ module Compiler
                          .greater_equal?,
                          .equal?,
                          .not_equal?
-                        @ctx.int1.array(l_type.array_size)
+                        Type.new TypeType::Boolean, false, llvm_l_type.array_size.to_u32
                       in .addition?,
                          .subtraction?,
                          .multiplication?,
@@ -331,7 +334,8 @@ module Compiler
                         l_type
                       end
 
-        holder = builder.alloca holder_type, "tmp"
+        llvm_holder_type = holder_type.to_llvm_type @ctx
+        holder = builder.alloca llvm_holder_type, "tmp"
         index = builder.alloca @ctx.int64
 
         builder.store @ctx.int64.const_int(0), index
@@ -346,21 +350,21 @@ module Compiler
 
         index_check = builder.load @ctx.int64, index
 
-        cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(l_type.array_size)
+        cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(llvm_l_type.array_size)
 
         builder.cond cond, body_block, end_block
 
         builder.position_at_end body_block
 
-        lp_i = builder.gep l_type, l, @ctx.int64.const_int(0), index_check, "gep1"
-        rp_i = builder.gep r_type, r, @ctx.int64.const_int(0), index_check, "gep2"
+        lp_i = builder.gep llvm_l_type, l, @ctx.int64.const_int(0), index_check, "gep1"
+        rp_i = builder.gep llvm_r_type, r, @ctx.int64.const_int(0), index_check, "gep2"
 
-        l_i = builder.load l_type.element_type, lp_i, "li"
-        r_i = builder.load r_type.element_type, rp_i, "ri"
+        l_i = builder.load llvm_l_type.element_type, lp_i, "li"
+        r_i = builder.load llvm_r_type.element_type, rp_i, "ri"
 
         tmp = builder_operation.call l_i, r_i
 
-        h_i = builder.gep holder_type.element_type, holder, index_check
+        h_i = builder.gep llvm_holder_type.element_type, holder, index_check
 
         s = builder.store tmp, h_i
 
@@ -373,11 +377,11 @@ module Compiler
         builder.br cond_block
 
         {holder, end_block, holder_type}
-      elsif l_type.kind == LLVM::Type::Kind::Array && r_type.kind != LLVM::Type::Kind::Array
-        builder_operation = build_builder_operation builder, operation, l_type.element_type.kind
+      elsif llvm_l_type.kind == LLVM::Type::Kind::Array && llvm_r_type.kind != LLVM::Type::Kind::Array
+        builder_operation = build_builder_operation builder, operation, llvm_l_type.element_type.kind
 
         # TODO: should casting be moved here? should cast nodes handle arrays?
-        if l_type.element_type.kind != r_type.kind
+        if llvm_l_type.element_type.kind != llvm_r_type.kind
           raise "arrays must be of the same type (should be unreachable)"
         end
 
@@ -388,7 +392,7 @@ module Compiler
                          .greater_equal?,
                          .equal?,
                          .not_equal?
-                        @ctx.int1.array(l_type.array_size)
+                        Type.new TypeType::Boolean, false, llvm_l_type.array_size.to_u32
                       in .addition?,
                          .subtraction?,
                          .multiplication?,
@@ -398,7 +402,8 @@ module Compiler
                         l_type
                       end
 
-        holder = builder.alloca holder_type, "tmp"
+        llvm_holder_type = holder_type.to_llvm_type @ctx
+        holder = builder.alloca llvm_holder_type, "tmp"
         index = builder.alloca @ctx.int64
 
         builder.store @ctx.int64.const_int(0), index
@@ -413,20 +418,20 @@ module Compiler
 
         index_check = builder.load @ctx.int64, index
 
-        cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(l_type.array_size)
+        cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(llvm_l_type.array_size)
 
         builder.cond cond, body_block, end_block
 
         builder.position_at_end body_block
 
-        lp_i = builder.gep l_type, l, @ctx.int64.const_int(0), index_check, "gep1"
+        lp_i = builder.gep llvm_l_type, l, @ctx.int64.const_int(0), index_check, "gep1"
 
-        l_i = builder.load l_type.element_type, lp_i, "li"
+        l_i = builder.load llvm_l_type.element_type, lp_i, "li"
         r_i = r
 
         tmp = builder_operation.call l_i, r_i
 
-        h_i = builder.gep holder_type.element_type, holder, index_check
+        h_i = builder.gep llvm_holder_type.element_type, holder, index_check
 
         s = builder.store tmp, h_i
 
@@ -439,11 +444,11 @@ module Compiler
         builder.br cond_block
 
         {holder, end_block, holder_type}
-      elsif l_type.kind != LLVM::Type::Kind::Array && r_type.kind == LLVM::Type::Kind::Array
-        builder_operation = build_builder_operation builder, operation, r_type.element_type.kind
+      elsif llvm_l_type.kind != LLVM::Type::Kind::Array && llvm_r_type.kind == LLVM::Type::Kind::Array
+        builder_operation = build_builder_operation builder, operation, llvm_r_type.element_type.kind
 
         # TODO: should casting be moved here? should cast nodes handle arrays?
-        if l_type.kind != r_type.element_type.kind
+        if llvm_l_type.kind != llvm_r_type.element_type.kind
           raise "arrays must be of the same type (should be unreachable)"
         end
 
@@ -454,7 +459,7 @@ module Compiler
                          .greater_equal?,
                          .equal?,
                          .not_equal?
-                        @ctx.int1.array(r_type.array_size)
+                        Type.new TypeType::Boolean, false, llvm_r_type.array_size.to_u32
                       in .addition?,
                          .subtraction?,
                          .multiplication?,
@@ -464,7 +469,8 @@ module Compiler
                         r_type
                       end
 
-        holder = builder.alloca holder_type, "tmp"
+        llvm_holder_type = holder_type.to_llvm_type @ctx
+        holder = builder.alloca llvm_holder_type, "tmp"
         index = builder.alloca @ctx.int64
 
         builder.store @ctx.int64.const_int(0), index
@@ -479,20 +485,20 @@ module Compiler
 
         index_check = builder.load @ctx.int64, index
 
-        cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(r_type.array_size)
+        cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(llvm_r_type.array_size)
 
         builder.cond cond, body_block, end_block
 
         builder.position_at_end body_block
 
-        rp_i = builder.gep r_type, r, @ctx.int64.const_int(0), index_check, "gep2"
+        rp_i = builder.gep llvm_r_type, r, @ctx.int64.const_int(0), index_check, "gep2"
 
         l_i = l
-        r_i = builder.load r_type.element_type, rp_i, "ri"
+        r_i = builder.load llvm_r_type.element_type, rp_i, "ri"
 
         tmp = builder_operation.call l_i, r_i
 
-        h_i = builder.gep holder_type.element_type, holder, index_check
+        h_i = builder.gep llvm_holder_type.element_type, holder, index_check
 
         s = builder.store tmp, h_i
 
@@ -510,21 +516,21 @@ module Compiler
       end
     end
 
-    def generate(builder, basic_block, expr : BinaryExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
+    def generate(builder, basic_block, expr : BinaryExpr) : {LLVM::Value, LLVM::BasicBlock, Type}
       l, block, l_type = generate builder, basic_block, expr.lhs
 
       builder.position_at_end block
 
       if (expr.operation.bitwise_and? || expr.operation.bitwise_or?) && l.type.kind == LLVM::Type::Kind::Integer && l.type.int_width == 1
         value, block = build_bool_operation builder, block, expr.operation, l, expr.rhs
-        return {value, block, @ctx.int1}
+        return {value, block, Type.new(TypeType::Boolean)}
       end
 
       r, block, r_type = generate builder, block, expr.rhs
 
       builder.position_at_end block
 
-      case {l_type.kind, r_type.kind}
+      case {l.type.kind, r.type.kind}
       when {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Integer}
         ret = build_int_operation builder, expr.operation, l, r
         {ret, block, l_type}

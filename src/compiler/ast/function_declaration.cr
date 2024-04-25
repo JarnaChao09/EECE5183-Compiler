@@ -27,8 +27,16 @@ module Compiler
     def generate(builder, basic_block, func_decl : FunctionDeclaration) : LLVM::BasicBlock
       func_name = "#{@function_name}_#{func_decl.name}"
 
-      param_types = func_decl.function.parameter_types.map { |e| e.to_llvm_type @ctx }
-      return_type = func_decl.function.return_type.to_llvm_type @ctx
+      param_types = func_decl.function.parameters.map { |e|
+        param_type = e.variable_type.to_llvm_type @ctx
+
+        if param_type.kind == LLVM::Type::Kind::Array
+          param_type.element_type.pointer
+        else
+          param_type
+        end
+      }
+      return_type = func_decl.function.return_type.type.to_llvm_type @ctx
       func_type = LLVM::Type.function param_types, return_type
 
       if func_decl.is_global
@@ -48,7 +56,7 @@ module Compiler
       }
 
       prev_variables = @variables
-      @variables = {} of String => {LLVM::Value, LLVM::Type}
+      @variables = {} of String => {LLVM::Value, Type}
 
       prev_function_types = @function_types
       @function_types = {
@@ -61,12 +69,14 @@ module Compiler
       current_basic_block = @function.basic_blocks.append
 
       @function.params.each_with_index do |param, i|
+        param.name = func_decl.function.parameters[i].variable
+
         builder.position_at_end current_basic_block
 
-        param_alloca = builder.alloca param.type, func_decl.function.parameters[i]
+        param_alloca = builder.alloca param.type, func_decl.function.parameters[i].variable
         builder.store param, param_alloca
 
-        @variables[func_decl.function.parameters[i]] = {param_alloca, param.type}
+        @variables[func_decl.function.parameters[i].variable] = {param_alloca, func_decl.function.parameters[i].variable_type}
       end
 
       func_decl.function.declarations.each do |decl|

@@ -62,20 +62,16 @@ module Compiler
       end
     end
 
-    def generate(builder, basic_block, unary_expr : UnaryExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
+    def generate(builder, basic_block, unary_expr : UnaryExpr) : {LLVM::Value, LLVM::BasicBlock, Type}
       expr, block, expr_type = generate builder, basic_block, unary_expr.expression
 
       builder.position_at_end block
 
-      ret, block = case expr_type.kind
-                   when LLVM::Type::Kind::Integer, LLVM::Type::Kind::Double, LLVM::Type::Kind::Pointer
-                     builder_operation, ret_type = build_unary_operation builder, unary_expr.operation, expr_type
+      ret, block = case
+                   when array_size = expr_type.array_size
+                     builder_operation, holder_element_type = build_unary_operation builder, unary_expr.operation, expr_type.type.to_llvm_type(@ctx)
 
-                     {builder_operation.call(expr), block}
-                   when LLVM::Type::Kind::Array
-                     builder_operation, holder_element_type = build_unary_operation builder, unary_expr.operation, expr_type.element_type
-
-                     holder_type = holder_element_type.array expr_type.array_size
+                     holder_type = holder_element_type.array array_size
 
                      holder = builder.alloca holder_type, "tmp"
                      index = builder.alloca @ctx.int64
@@ -92,15 +88,17 @@ module Compiler
 
                      index_check = builder.load @ctx.int64, index
 
-                     cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(expr_type.array_size)
+                     cond = builder.icmp LLVM::IntPredicate::SLT, index_check, @ctx.int64.const_int(array_size)
 
                      builder.cond cond, body_block, end_block
 
                      builder.position_at_end body_block
 
-                     ep_i = builder.gep expr_type, expr, @ctx.int64.const_int(0), index_check, "gep1"
+                     llvm_expr_type = expr_type.to_llvm_type @ctx
 
-                     e_i = builder.load expr_type.element_type, ep_i, "ei"
+                     ep_i = builder.gep llvm_expr_type, expr, @ctx.int64.const_int(0), index_check, "gep1"
+
+                     e_i = builder.load llvm_expr_type.element_type, ep_i, "ei"
 
                      tmp = builder_operation.call e_i
 
@@ -117,6 +115,11 @@ module Compiler
                      builder.br cond_block
 
                      {holder, end_block}
+                   when expr_type.type.integer?, expr_type.type.double?, expr_type.type.boolean?, expr_type.type.string?
+                     llvm_expr_type = expr_type.to_llvm_type @ctx
+                     builder_operation, ret_type = build_unary_operation builder, unary_expr.operation, llvm_expr_type
+
+                     {builder_operation.call(expr), block}
                    else
                      raise "unreachable"
                    end

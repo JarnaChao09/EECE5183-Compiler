@@ -1,0 +1,56 @@
+program array_args is
+    variable tmp : bool;
+    variable arr : integer[3];
+    variable arr2 : integer[3];
+
+    procedure stuff : bool(variable x : integer[3])
+        variable s : integer;
+    begin
+        tmp := putinteger(x[0]);
+        tmp := putinteger(x[1]);
+        tmp := putinteger(x[2]);
+
+        s := getinteger();
+
+        tmp := putstring("Filling with");
+        tmp := putinteger(s);
+
+        x[0] := s;
+        x[1] := s;
+        x[2] := s;
+
+        tmp := putinteger(x[0]);
+        tmp := putinteger(x[1]);
+        tmp := putinteger(x[2]);
+        tmp := putinteger(arr[0]);
+        tmp := putinteger(arr[1]);
+        tmp := putinteger(arr[2]);
+
+        // x := arr2;
+        arr2 := x;
+
+        tmp := putstring("");
+
+        tmp := putinteger(arr2[0]);
+        tmp := putinteger(arr2[1]);
+        tmp := putinteger(arr2[2]);
+        
+        /*
+        tmp := putinteger(x[0]);
+        tmp := putinteger(x[1]);
+        tmp := putinteger(x[2]);
+        */
+
+        return true;
+    end procedure;
+begin
+    arr[0] := 1;
+    arr[1] := getinteger();
+    arr[2] := 2;
+
+    tmp := putinteger(arr[0]);
+    tmp := putinteger(arr[1]);
+    tmp := putinteger(arr[2]);
+
+    tmp := stuff(arr);
+end program.

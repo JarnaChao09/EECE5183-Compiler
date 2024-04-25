@@ -5,16 +5,67 @@ module Compiler
   class Parser
     property tokens : Array(Token)
     property current : Int32
-    property type_table : Hash(String, Type)
+    property type_table : Hash(String, TypeType)
+    property variables : Hash(String, Type)
+    property global_variables : Hash(String, Type)
+    property functions : Hash(String, FunctionType)
+    property global_functions : Hash(String, FunctionType)
+    property binary_operators : Hash(TokenType, Array({Type, Type}))
+    property unary_operators : Hash(TokenType, Array(Type))
+    property current_return_type : Type | Nil
 
     def initialize(@tokens)
       @current = 0
       @type_table = {
-        "integer" => Type::Integer,
-        "float"   => Type::Double,
-        "string"  => Type::String,
-        "bool"    => Type::Boolean,
+        "integer" => TypeType::Integer,
+        "float"   => TypeType::Double,
+        "string"  => TypeType::String,
+        "bool"    => TypeType::Boolean,
       }
+
+      @boolean_type = Type.new(TypeType::Boolean)
+      @integer_type = Type.new(TypeType::Integer)
+      @double_type = Type.new(TypeType::Double)
+      @string_type = Type.new(TypeType::String)
+
+      @variables = {} of String => Type
+      @global_variables = {} of String => Type
+      @functions = {} of String => FunctionType
+      @global_functions = {
+        "getbool"    => FunctionType.new([] of Type, @boolean_type),
+        "getinteger" => FunctionType.new([] of Type, @integer_type),
+        "getfloat"   => FunctionType.new([] of Type, @double_type),
+        "getstring"  => FunctionType.new([] of Type, @string_type),
+        "putbool"    => FunctionType.new([@boolean_type], @boolean_type),
+        "putinteger" => FunctionType.new([@integer_type], @boolean_type),
+        "putfloat"   => FunctionType.new([@double_type], @boolean_type),
+        "putstring"  => FunctionType.new([@string_type], @boolean_type),
+        "sqrt"       => FunctionType.new([@integer_type], @double_type),
+      }
+
+      @binary_operators = {
+        TokenType::Plus  => [{@double_type, @double_type}, {@integer_type, @integer_type}],
+        TokenType::Minus => [{@double_type, @double_type}, {@integer_type, @integer_type}],
+        TokenType::Star  => [{@double_type, @double_type}, {@integer_type, @integer_type}],
+        TokenType::Slash => [{@double_type, @double_type}, {@integer_type, @integer_type}],
+
+        TokenType::And => [{@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+        TokenType::Or  => [{@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+
+        TokenType::LT => [{@double_type, @double_type}, {@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+        TokenType::LE => [{@double_type, @double_type}, {@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+        TokenType::GT => [{@double_type, @double_type}, {@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+        TokenType::GE => [{@double_type, @double_type}, {@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+        TokenType::EQ => [{@double_type, @double_type}, {@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+        TokenType::NE => [{@double_type, @double_type}, {@integer_type, @integer_type}, {@boolean_type, @boolean_type}],
+      }
+
+      @unary_operators = {
+        TokenType::Not   => [@integer_type, @boolean_type],
+        TokenType::Minus => [@integer_type, @double_type],
+      }
+
+      @current_return_type = nil
     end
 
     def parse
@@ -93,7 +144,17 @@ module Compiler
                      size.lexeme.to_u32
                    end
 
-      return VariableDeclaration.new(variable_identifier.lexeme, type_identifier, is_global, array_size)
+      complete_type_identifier = Type.new type_identifier, is_global, array_size
+
+      var_holder = if is_global
+                     @global_variables
+                   else
+                     @variables
+                   end
+
+      var_holder[variable_identifier.lexeme] = complete_type_identifier
+
+      return VariableDeclaration.new variable_identifier.lexeme, complete_type_identifier, is_global
     end
 
     private def procedure_declaration(is_global : Bool) : Decl
@@ -101,10 +162,9 @@ module Compiler
 
       expect TokenType::Colon, "Expected a ':' after procedure name"
 
-      return_type_identifier = type_mark
+      return_type_identifier = Type.new type_mark
 
-      parameter_names = [] of String
-      parameter_types = [] of Type
+      parameters = [] of VariableDeclaration
 
       expect TokenType::LeftParen, "Expected a '(' to start the parameter list"
 
@@ -112,10 +172,7 @@ module Compiler
         loop do
           expect TokenType::Variable, "Expect variable keyword for new parameter"
 
-          variable_decl = variable_declaration false
-
-          parameter_names << variable_decl.variable
-          parameter_types << variable_decl.variable_type
+          parameters << variable_declaration false
 
           break unless match [TokenType::Comma]
         end
@@ -141,11 +198,18 @@ module Compiler
       expect TokenType::End, "Expected 'end' after list of statements"
       expect TokenType::Procedure, "Expected 'end procedure' to denote the end of a procedure body"
 
+      func_holder = if is_global
+                      @global_functions
+                    else
+                      @functions
+                    end
+
+      func_holder[procedure_identifier.lexeme] = FunctionType.new parameters.map &.variable_type, return_type_identifier
+
       return FunctionDeclaration.new(
         procedure_identifier.lexeme,
         Function.new(
-          parameter_names,
-          parameter_types,
+          parameters,
           return_type_identifier,
           function_decls,
           stmts,
@@ -154,7 +218,7 @@ module Compiler
       )
     end
 
-    private def type_mark : Type
+    private def type_mark : TypeType
       type_id = expect TokenType::Identifier, "Expected a valid type identifier"
 
       if type_identifier = @type_table[type_id.lexeme]
@@ -184,7 +248,7 @@ module Compiler
     private def if_statement : Stmt
       expect TokenType::LeftParen, "Expected '(' before conditional expression in if statement"
 
-      condition = expression
+      condition, condition_type = expression
 
       expect TokenType::RightParen, "Expected ')' after conditional expression in if statement"
       expect TokenType::Then, "Expected 'then' after conditional expression in if statement"
@@ -221,7 +285,7 @@ module Compiler
 
       expect TokenType::SemiColon, "Expected a ';' after initializer in a for loop"
 
-      condition = expression
+      condition, condition_type = expression
 
       expect TokenType::RightParen, "Expected a ')' after conditional expression in a for loop"
 
@@ -241,7 +305,7 @@ module Compiler
     end
 
     private def return_statement : Stmt
-      return_value = expression
+      return_value, return_type = expression
 
       return ReturnStmt.new return_value
     end
@@ -250,14 +314,14 @@ module Compiler
       dest = expect TokenType::Identifier, "Expected an identifier as assignment destination"
 
       array_index = if match [TokenType::LeftBracket]
-                      index = expression
+                      index, index_type = expression
                       expect TokenType::RightBracket, "Expected a ']' after array size"
                       index
                     end
 
       expect TokenType::Assign, "Expected a := after assignment destination"
 
-      value = expression
+      value, value_type = expression
 
       if array_index
         IndexSetStmt.new(
@@ -273,24 +337,29 @@ module Compiler
       end
     end
 
-    private def expression : Expr
+    private def expression : {Expr, Type}
       expression_not
     end
 
-    private def expression_not : Expr
+    private def expression_not : {Expr, Type}
       if match [TokenType::Not]
+        t = previous.token_type
+
         operation = UnaryExpr::Operation::BitwiseNot
-        return UnaryExpr.new(operation, arithmetic)
+
+        ret, type = arithmetic
+        return {UnaryExpr.new(operation, ret), type}
       end
 
       return expression_and_or
     end
 
-    private def expression_and_or : Expr
-      expr = arithmetic
+    private def expression_and_or : {Expr, Type}
+      expr, expr_type = arithmetic
 
       while match [TokenType::And, TokenType::Or]
-        operation = case previous.token_type
+        t = previous.token_type
+        operation = case t
                     when TokenType::And
                       BinaryExpr::Operation::BitwiseAnd
                     when TokenType::Or
@@ -299,17 +368,19 @@ module Compiler
                       raise "should be unreachable"
                     end
 
-        expr = BinaryExpr.new(expr, operation, arithmetic)
+        right, type = arithmetic
+        expr = BinaryExpr.new(expr, operation, right)
       end
 
-      return expr
+      return {expr, expr_type}
     end
 
-    private def arithmetic : Expr
-      expr = relation
+    private def arithmetic : {Expr, Type}
+      expr, expr_type = relation
 
       while match [TokenType::Plus, TokenType::Minus]
-        operation = case previous.token_type
+        t = previous.token_type
+        operation = case t
                     when TokenType::Plus
                       BinaryExpr::Operation::Addition
                     when TokenType::Minus
@@ -318,17 +389,20 @@ module Compiler
                       raise "should be unreachable"
                     end
 
-        expr = BinaryExpr.new(expr, operation, relation)
+        right, type = relation
+        expr = BinaryExpr.new(expr, operation, right)
       end
 
-      return expr
+      return {expr, expr_type}
     end
 
-    private def relation : Expr
-      expr = term
+    private def relation : {Expr, Type}
+      expr, expr_type = term
 
       while match [TokenType::LT, TokenType::LE, TokenType::GT, TokenType::GE, TokenType::EQ, TokenType::NE]
-        operation = case previous.token_type
+        t = previous.token_type
+
+        operation = case t
                     when TokenType::LT
                       BinaryExpr::Operation::LessThan
                     when TokenType::LE
@@ -345,17 +419,19 @@ module Compiler
                       raise "should be unreachable"
                     end
 
-        expr = BinaryExpr.new(expr, operation, term)
+        right, type = term
+        expr = BinaryExpr.new(expr, operation, right)
       end
 
-      return expr
+      return {expr, expr_type}
     end
 
-    private def term : Expr
-      expr = factor
+    private def term : {Expr, Type}
+      expr, expr_type = factor
 
       while match [TokenType::Star, TokenType::Slash]
-        operation = case previous.token_type
+        t = previous.token_type
+        operation = case t
                     when TokenType::Star
                       BinaryExpr::Operation::Multiplication
                     when TokenType::Slash
@@ -364,79 +440,83 @@ module Compiler
                       raise "should be unreachable"
                     end
 
-        expr = BinaryExpr.new(expr, operation, factor)
+        right, type = factor
+        expr = BinaryExpr.new(expr, operation, right)
       end
 
-      return expr
+      return {expr, expr_type}
     end
 
-    private def factor : Expr
+    private def factor : {Expr, Type}
       if match [TokenType::Minus]
+        t = previous.token_type
         operation = UnaryExpr::Operation::Negation
-        ret = case
-              when match [TokenType::IntegerLiteral]
-                IntegerExpr.new previous.lexeme.to_i64
-              when match [TokenType::FloatLiteral]
-                FloatExpr.new previous.lexeme.to_f64
-              when match [TokenType::Identifier]
-                name
-              else
-                raise "error"
-              end
+        ret, type = case
+                    when match [TokenType::IntegerLiteral]
+                      {IntegerExpr.new(previous.lexeme.to_i64), @integer_type}
+                    when match [TokenType::FloatLiteral]
+                      {FloatExpr.new(previous.lexeme.to_f64), @double_type}
+                    when match [TokenType::Identifier]
+                      name
+                    else
+                      raise "error"
+                    end
 
-        return UnaryExpr.new operation, ret
+        return {UnaryExpr.new(operation, ret), type}
       end
 
       return atom
     end
 
-    private def atom : Expr
+    private def atom : {Expr, Type}
       return case
       when match [TokenType::True]
-        BooleanExpr.new true
+        {BooleanExpr.new(true), @boolean_type}
       when match [TokenType::False]
-        BooleanExpr.new false
+        {BooleanExpr.new(false), @boolean_type}
       when match [TokenType::IntegerLiteral]
-        IntegerExpr.new previous.lexeme.to_i64
+        {IntegerExpr.new(previous.lexeme.to_i64), @integer_type}
       when match [TokenType::FloatLiteral]
-        FloatExpr.new previous.lexeme.to_f64
+        {FloatExpr.new(previous.lexeme.to_f64), @double_type}
       when match [TokenType::StringLiteral]
-        StringExpr.new previous.lexeme[1..-2]
+        {StringExpr.new(previous.lexeme[1..-2]), @string_type}
       when match [TokenType::Identifier]
         call_or_name
       when match [TokenType::LeftParen]
-        ret = expression
+        ret, ret_type = expression
         expect TokenType::RightParen, "Expected ')' after expression"
-        ret
+        {ret, ret_type}
       else
         raise "error"
       end
     end
 
-    private def name : Expr
+    private def name : {Expr, Type}
       id = previous
 
+      type = @variables[id.lexeme]? || @global_variables[id.lexeme]
+
       array_index = if match [TokenType::LeftBracket]
-                      index = expression
+                      index, index_type = expression
                       expect TokenType::RightBracket, "Expected a ']' after array size"
                       index
                     end
 
-      if array_index
+      return {if array_index
         IndexGetExpr.new(
           id.lexeme,
           array_index
         )
       else
         VariableExpr.new(id.lexeme)
-      end
+      end, type}
     end
 
-    private def call_or_name : Expr
+    private def call_or_name : {Expr, Type}
       id = previous
 
       array_index = if match [TokenType::LeftBracket]
-                      index = expression
+                      index, index_type = expression
                       expect TokenType::RightBracket, "Expected a ']' after array size"
                       index
                     end
@@ -445,7 +525,9 @@ module Compiler
                     args = [] of Expr
                     if !check_current TokenType::RightParen
                       loop do
-                        args << expression
+                        arg, arg_type = expression
+
+                        args << arg
 
                         break unless match [TokenType::Comma]
                       end
@@ -457,20 +539,20 @@ module Compiler
                   end
 
       if array_index
-        return IndexGetExpr.new(
+        return {IndexGetExpr.new(
           id.lexeme,
           array_index
-        )
+        ), @boolean_type}
       end
 
       if call_args
-        return CallExpr.new(
+        return {CallExpr.new(
           id.lexeme,
           call_args
-        )
+        ), @boolean_type}
       end
 
-      return VariableExpr.new(id.lexeme)
+      return {VariableExpr.new(id.lexeme), @boolean_type}
     end
 
     private def is_at_end? : Bool

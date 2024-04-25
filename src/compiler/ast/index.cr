@@ -28,15 +28,22 @@ module Compiler
   end
 
   class Compiler::CodeGenerator
-    def generate(builder, basic_block, index_get : IndexGetExpr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
+    def generate(builder, basic_block, index_get : IndexGetExpr) : {LLVM::Value, LLVM::BasicBlock, Type}
       index, block, _ = generate builder, basic_block, index_get.index
 
       builder.position_at_end block
 
-      alloca_location, var_type = @variables[index_get.variable]? || @global_variables[index_get.variable]
+      alloca_location, var_type, local = if v = @variables[index_get.variable]?
+                                           loc, t = v
+                                           {loc, t, true}
+                                         else
+                                           loc, t = @global_variables[index_get.variable]
+
+                                           {loc, t, false}
+                                         end
 
       zero = @ctx.int64.const_int 0
-      max = @ctx.int64.const_int var_type.array_size
+      max = @ctx.int64.const_int var_type.array_size.not_nil!
 
       rhs = @function.basic_blocks.append "bc_rhs"
       and = @function.basic_blocks.append "bc_end"
@@ -67,8 +74,15 @@ module Compiler
 
       builder.position_at_end index_block
 
-      array_location = builder.gep var_type, alloca_location, @ctx.int64.const_int(0), index
-      ret = builder.load var_type.element_type, array_location
+      llvm_var_type = var_type.to_llvm_type @ctx
+
+      array_location = if !local
+                         builder.gep llvm_var_type, alloca_location, @ctx.int64.const_int(0), index
+                       else
+                         loaded_location = builder.load llvm_var_type.element_type.pointer, alloca_location
+                         builder.gep llvm_var_type.element_type, loaded_location, index
+                       end
+      ret = builder.load llvm_var_type.element_type, array_location
 
       return {ret, index_block, var_type.element_type}
     end
@@ -78,10 +92,19 @@ module Compiler
 
       builder.position_at_end block
 
-      alloca_location, var_type = @variables[index_set.variable]? || @global_variables[index_set.variable]
+      alloca_location, var_type, local = if v = @variables[index_set.variable]?
+                                           loc, t = v
+                                           {loc, t, true}
+                                         else
+                                           loc, t = @global_variables[index_set.variable]
+
+                                           {loc, t, false}
+                                         end
+
+      llvm_var_type = var_type.to_llvm_type @ctx
 
       zero = @ctx.int64.const_int 0
-      max = @ctx.int64.const_int var_type.array_size
+      max = @ctx.int64.const_int llvm_var_type.array_size
 
       rhs = @function.basic_blocks.append "bc_rhs"
       and = @function.basic_blocks.append "bc_end"
@@ -116,7 +139,12 @@ module Compiler
 
       builder.position_at_end block
 
-      array_location = builder.gep var_type, alloca_location, @ctx.int64.const_int(0), index
+      array_location = if !local
+                         builder.gep llvm_var_type, alloca_location, @ctx.int64.const_int(0), index
+                       else
+                         loaded_location = builder.load llvm_var_type.element_type.pointer, alloca_location
+                         builder.gep llvm_var_type.element_type, loaded_location, index
+                       end
 
       builder.store init, array_location
 

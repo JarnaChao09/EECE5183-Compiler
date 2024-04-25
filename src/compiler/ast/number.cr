@@ -13,13 +13,13 @@ module Compiler
       end
 
       class Compiler::CodeGenerator
-        def generate(builder, basic_block, expr : {{ number_type_name }}Expr) : {LLVM::Value, LLVM::BasicBlock, LLVM::Type}
+        def generate(builder, basic_block, expr : {{ number_type_name }}Expr) : {LLVM::Value, LLVM::BasicBlock, Type}
           return { {{ codegen_code }} , basic_block, {{ type_kind }} }
         end
       end
     end
   end
 
-  define_number_type Float, Float64, @ctx.double.const_double(expr.value), @ctx.double
-  define_number_type Integer, Int64, @ctx.int64.const_int(expr.value), @ctx.int64
+  define_number_type Float, Float64, @ctx.double.const_double(expr.value), Type.new(TypeType::Double)
+  define_number_type Integer, Int64, @ctx.int64.const_int(expr.value), Type.new(TypeType::Integer)
 end

@@ -1,5 +1,5 @@
 module Compiler
-  enum Type
+  enum TypeType
     Boolean
     Integer
     Double
@@ -42,6 +42,32 @@ module Compiler
       in .string?
         ctx.pointer.null_pointer
       end
+    end
+  end
+
+  record Type, type : TypeType, global : Bool = false, array_size : UInt32 | Nil = nil do
+    def element_type : Type
+      if array_size
+        return Type.new type
+      else
+        raise "Not an Array Type"
+      end
+    end
+
+    def to_llvm_type(ctx) : LLVM::Type
+      ret = type.to_llvm_type ctx
+
+      if arr_size = array_size
+        ret = ret.array arr_size
+      end
+
+      return ret
+    end
+  end
+
+  record FunctionType, parameter_types : Array(Type), return_type : Type, vararg : Bool = false do
+    def to_llvm_function_type(ctx) : LLVM::Type
+      LLVM::Type.function parameter_types.map { |e| e.to_llvm_type ctx }, return_type.to_llvm_type(ctx), vararg
     end
   end
 end
