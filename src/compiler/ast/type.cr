@@ -45,6 +45,14 @@ module Compiler
     end
   end
 
+  # NOTE: global member on the following record is currently only for use when trying to load
+  # arrays. GEP instructions will change depending on if the load is to a local array (ptr ptr)
+  # or a global array (ptr).
+  # global is put onto the variable's type so that it may propogate up the codegeneration stack
+  # this is currently only used in assignment.cr
+  # 
+  # index.cr could be refactored to utilize this information instead of calculating local on the fly
+  # from table lookups
   record Type, type : TypeType, global : Bool = false, array_size : UInt32 | Nil = nil do
     def element_type : Type
       if array_size
