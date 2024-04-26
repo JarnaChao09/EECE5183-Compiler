@@ -55,12 +55,12 @@ All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2
 
 ### Remaining Tasks
 
-[ ] Verify remaining semantic details
-[ ] Include source information inside error messages
-[ ] Advanced resynchronization capabilities
-[ ] Update strings to not memory leak
-[ ] Create docker file
-[ ] Create better, more advanced, cli options
+- [ ] Verify remaining semantic details
+- [ ] Include source information inside error messages
+- [ ] Advanced resynchronization capabilities
+- [ ] Update strings to not memory leak
+- [ ] Create docker file
+- [ ] Create better, more advanced, cli options
 
 ## Contributing
 
