@@ -53,6 +53,15 @@ As this project is for a university assignment, development will not be encourag
 
 All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2020 edition. Crystal was installed using homebrew with LLVM version 17.0.6 and clang version 17.0.6. A docker file will be provided (soon) to be used for all future development.
 
+### Remaining Tasks
+
+[ ] Verify remaining semantic details
+[ ] Include source information inside error messages
+[ ] Advanced resynchronization capabilities
+[ ] Update strings to not memory leak
+[ ] Create docker file
+[ ] Create better, more advanced, cli options
+
 ## Contributing
 
 1. Fork it (<https://github.com/JarnaChao09/EECE5183-Compiler>)
