@@ -52,6 +52,7 @@ There are currently two options to get the correct LLVM version:
 ### Requirements
 - To install Crystal using the second method detailed above, [Homebrew/Linuxbrew](https://brew.sh/) will be required.
 
+
 1. Retrieve the correct brew formula for Crystal 1.11.2. This can be done using `curl -o crystal.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/6d066d262ae406852eb4b0b6f25f820a14c8d76c/Formula/c/crystal.rb`
 2. Install using `brew install --formula crystal.rb`
 3. Verify that the correct version of Crystal has been installed with `crystal --version`. The output should show Crystal 1.11.2 and LLVM 17.0.6.
