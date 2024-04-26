@@ -7,7 +7,7 @@ A compiler of a Pascal-like derivative for EECE 5183 Compiler Theory and Practic
 ### Requirements
 
 - The [Crystal language](https://crystal-lang.org/)
-    - Version >= 1.11.0
+    - Version >= 1.11.0. See [getting the right crystal](#getting-the-right-crystal) section for more details
     - The compiler is built entirely in Crystal with **zero** dependencies
 - LLVM 17.0.6
     - Crystal comes with pre-built bindings to LLVM. See [getting the right LLVM](#getting-the-right-llvm) section for more details.
@@ -46,6 +46,19 @@ The one package manager that is currently up-to-date on the LLVM version being b
 There are currently two options to get the correct LLVM version:
 1. Compile Crystal from source at [the GitHub](https://github.com/crystal-lang/crystal) using the correct LLVM version.
 2. Pour from an old Homebrew/Linuxbrew formula to recieve the correct built binary.
+
+## Getting the right Crystal
+
+### Requirements
+- To install Crystal using the second method detailed above, [Homebrew/Linuxbrew](https://brew.sh/) will be required.
+
+1. Retrieve the correct brew formula for Crystal 1.11.2. This can be done using `curl -o crystal.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/6d066d262ae406852eb4b0b6f25f820a14c8d76c/Formula/c/crystal.rb`
+2. Install using `brew install --formula crystal.rb`
+3. Verify that the correct version of Crystal has been installed with `crystal --version`. The output should show Crystal 1.11.2 and LLVM 17.0.6.
+4. Export `$(brew --prefix)/lib` as the environment variables `CRYSTAL_LIBRARY_PATH` and `CRYSTAL_LIBRARY_RPATH`. This will allow for Crystal to correctly link against LLVM and its other dependencies (such as libevent).
+5. Verify that crystal is picking up on the correct environment variables with `crystal env`.
+
+> These installation steps were tested on an Ubuntu WSL2 instance, mileage may vary depending.
 
 ## Development
 
