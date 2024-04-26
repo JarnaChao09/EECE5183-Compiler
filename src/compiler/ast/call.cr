@@ -4,8 +4,9 @@ module Compiler
   class CallExpr < Expr
     property function : String
     property arguments : Array(Expr)
+    property types : Array(Type)
 
-    def initialize(@function, @arguments)
+    def initialize(@function, @arguments, @types)
     end
 
     def to_s(io : IO)
@@ -31,7 +32,24 @@ module Compiler
       end
     end
 
-    private def array_copy(builder, basic_block, call_arg, call_arg_type) : {LLVM::Value, LLVM::BasicBlock}
+    private def cast(builder, value : LLVM::Value, from_type : Type, to_type : Type) : LLVM::Value
+      llvm_casted_type = to_type.type.to_llvm_type @ctx
+
+      case {from_type.type, to_type.type}
+      in {TypeType::Integer, TypeType::Double}
+        builder.si2fp value, llvm_casted_type
+      in {TypeType::Double, TypeType::Integer}
+        builder.fp2si value, llvm_casted_type
+      in {TypeType::Boolean, TypeType::Integer}
+        builder.zext value, llvm_casted_type
+      in {TypeType::Integer, TypeType::Boolean}
+        builder.icmp LLVM::IntPredicate::NE, value, @ctx.int64.const_int(0)
+      in {_, _}
+        value
+      end
+    end
+
+    private def array_copy(builder, basic_block, call_arg : LLVM::Value, call_arg_type : Type, expected_type : Type) : {LLVM::Value, LLVM::BasicBlock}
       llvm_call_type = call_arg_type.to_llvm_type @ctx
 
       builder.position_at_end basic_block
@@ -57,9 +75,16 @@ module Compiler
 
       builder.position_at_end body_block
 
-      sp_i = builder.gep llvm_call_type, call_arg, @ctx.int64.const_int(0), index_check
+      sp_i = if call_arg_type.global
+               builder.gep llvm_call_type, call_arg, @ctx.int64.const_int(0), index_check
+             else
+               loaded_location = builder.load llvm_call_type.element_type.pointer, call_arg
+               builder.gep llvm_call_type.element_type, loaded_location, index_check
+             end
 
       s_i = builder.load llvm_call_type.element_type, sp_i
+
+      s_i = cast builder, s_i, call_arg_type.element_type, expected_type
 
       a_i = builder.gep llvm_call_type.element_type, tmp, index_check
 
@@ -89,11 +114,11 @@ module Compiler
 
       ret_block = basic_block
 
-      args = expr.arguments.map do |arg|
+      args = expr.arguments.map_with_index do |arg, i|
         builder.position_at_end ret_block
         call_arg, ret_block, call_type = generate builder, ret_block, arg
         if array_size = call_type.array_size
-          decay, ret_block = array_copy builder, ret_block, call_arg, call_type
+          decay, ret_block = array_copy builder, ret_block, call_arg, call_type, expr.types[i]
           decay
         else
           call_arg

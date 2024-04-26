@@ -1,0 +1,45 @@
+program ArrayCast is
+    variable x : integer[3];
+    variable y : float[3];
+    variable z : float[3];
+
+    variable tmp : bool;
+
+    procedure print : bool(variable arr : float[3])
+        variable out : bool;
+    begin
+        out := putfloat(arr[0]);
+        out := putfloat(arr[1]);
+        out := putfloat(arr[2]);
+
+        return out;
+    end procedure;
+
+    procedure perform : bool(variable x1 : integer[3], variable y1 : float[3])
+        variable z1 : float[3];
+    begin
+        z1 := x1 + y1;
+        return print(z1);
+    end procedure;
+begin
+    x[0] := getinteger();
+    x[1] := getinteger();
+    x[2] := getinteger();
+
+    y[0] := getfloat();
+    y[1] := getfloat();
+    y[2] := getfloat();
+
+    tmp := putstring("");
+
+    tmp := print(x);
+    tmp := print(y);
+
+    tmp := perform(x, y);
+
+    z := x + y;
+
+    tmp := putstring("");
+
+    tmp := print(z);
+end program.

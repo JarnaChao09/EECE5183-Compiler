@@ -80,7 +80,6 @@ module Compiler
       llvm_start_type = start_type.to_llvm_type @ctx
 
       if llvm_start_type.kind == LLVM::Type::Kind::Array
-        puts "DEBUG[ASSIGN]: #{dest_type} #{start_type}"
         array_copy builder, block, dest, dest_type, start_value, start_type
       else
         builder.store start_value, dest

@@ -50,7 +50,7 @@ module Compiler
   # or a global array (ptr).
   # global is put onto the variable's type so that it may propogate up the codegeneration stack
   # this is currently only used in assignment.cr
-  # 
+  #
   # index.cr could be refactored to utilize this information instead of calculating local on the fly
   # from table lookups
   record Type, type : TypeType, global : Bool = false, array_size : UInt32 | Nil = nil do
@@ -70,6 +70,13 @@ module Compiler
       end
 
       return ret
+    end
+
+    def to_s(io : IO)
+      io << type
+      if array_size
+        io << "[" << array_size << "]"
+      end
     end
   end
 

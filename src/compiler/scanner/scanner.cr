@@ -12,6 +12,8 @@ module Compiler
 
     @keywords : Hash(String, TokenType)
 
+    property errors : Array(Exception)
+
     def initialize(@source)
       @line_count = 1
       @column_count = 1
@@ -41,12 +43,18 @@ module Compiler
         "true"      => TokenType::True,
         "false"     => TokenType::False,
       }
+
+      @errors = [] of Exception
     end
 
     def tokens
       if @tokens.empty?
         while is_not_at_end?
-          @tokens << scan_token
+          begin
+            @tokens << scan_token
+          rescue ex
+            @errors << ex
+          end
         end
       end
 
@@ -125,7 +133,7 @@ module Compiler
                    when {'"', _}
                      string
                    else
-                     raise "Unknown Token @ #{@line_count}:#{@column_count}"
+                     raise "Unknown Token #{peek -1} @ #{@line_count}:#{@column_count}"
                    end
 
       Token.new token_type, token_type.string_literal? ? @source[@start...@current] : @source[@start...@current].downcase, @line_count, @column_count

@@ -7,6 +7,7 @@ require "option_parser"
 debug_llvm_ir = false
 compile = false
 run = false
+output_path = ""
 rel_file_path = ""
 
 errors = [] of String
@@ -18,6 +19,10 @@ options_parser = OptionParser.parse do |parser|
   parser.on "compile", "Compile a file" do
     parser.banner = "Welcome to the compiler for EECE 5183\nUsage: compiler compile [options] [program-file]"
     compile = true
+
+    parser.on "-o FILE_NAME", "--output FILE_NAME", "Specifies the name of the executable in the output directory" do |file_name|
+      output_path = file_name
+    end
   end
 
   parser.on "run", "Compiler and Execute a file using LLVM JIT" do
@@ -25,7 +30,7 @@ options_parser = OptionParser.parse do |parser|
     run = true
   end
 
-  parser.on "-llvm_ir", "--emit-llvm-ir", "Emits generated LLVM IR" do
+  parser.on "-llvm-ir", "--emit-llvm-ir", "Emits generated LLVM IR" do
     debug_llvm_ir = true
   end
 
@@ -94,20 +99,44 @@ file = File.read(rel_file_path)
 
 scanner = Compiler::Scanner.new file
 
+tokens = scanner.tokens
+
+if !scanner.errors.empty?
+  scanner.errors.map do |err|
+    puts "ERROR[SCANNER]: #{err}"
+  end
+
+  exit 1
+end
+
 # scanner.tokens.each do |token|
 #   puts token
 # end
 
-parser = Compiler::Parser.new scanner.tokens
+parser = Compiler::Parser.new tokens
 
 program = parser.parse
 
-puts parser.variables
-puts parser.global_variables
-puts parser.functions
-puts parser.global_functions
+if !parser.warnings.empty?
+  parser.warnings.map do |err|
+    puts err
+  end
+end
 
-exit
+if !parser.errors.empty?
+  parser.errors.map do |err|
+    puts "ERROR[PARSER]: #{err}"
+  end
+
+  exit 1
+end
+
+# puts parser.variables
+# puts parser.global_variables
+# puts parser.functions
+# puts parser.global_functions
+
+# exit
 
 generator = Compiler::CodeGenerator.new "main"
 
@@ -368,13 +397,39 @@ generator.generate program
 
 # exit
 
-generator.mod.dump
+if debug_llvm_ir
+  generator.mod.dump
 
-# File.open("test.ll", "w") do |file|
-#   generator.mod.to_s file
-# end
+  puts "========"
+end
 
-puts "========"
+generator.mod.verify
+
+if compile
+  if !Dir.exists? "output"
+    Dir.mkdir "output"
+  end
+
+  name = if output_path
+           output_path
+         else
+           "curr"
+         end
+
+  generator.emit_to_obj_file "output/#{name}.o"
+
+  clang_process = Process.run("clang", ["output/#{name}.o", "-o", "output/#{name}"], output: Process::Redirect::Pipe)
+
+  puts "compiled with status code #{$?}"
+elsif run
+  LLVM::JITCompiler.new generator.mod do |jit|
+    func_ptr = jit.get_pointer_to_global(generator.function)
+    func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
+    puts "exited with #{func_proc.call}"
+  end
+end
+
+# puts "========"
 
 # generator.optimize
 
@@ -382,13 +437,7 @@ puts "========"
 
 # puts "========"
 
-generator.mod.verify
-
-LLVM::JITCompiler.new generator.mod do |jit|
-  func_ptr = jit.get_pointer_to_global(generator.function)
-  func_proc = Proc(Int32).new(func_ptr, Pointer(Void).null)
-  puts "exited with #{func_proc.call}"
-end
+# generator.mod.verify
 
 # generator.define_native_function "ile", [generator.ctx.int64, generator.ctx.int64], generator.ctx.int1 do |generator, builder, function|
 #   l, r = function.params

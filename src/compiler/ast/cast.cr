@@ -3,13 +3,13 @@ require "./expr"
 module Compiler
   class CastExpr < Expr
     property expression : Expr
-    property casted_type : Type
+    property to_type : Type
 
-    def initialize(@expression, @casted_type)
+    def initialize(@expression, @to_type)
     end
 
     def to_s(io : IO)
-      io << "cast<#{@casted_type}>(#{@expression})"
+      io << "cast<#{@to_type.type}>(#{@expression})"
     end
   end
 
@@ -18,13 +18,17 @@ module Compiler
       value, basic_block, value_type = generate builder, basic_block, expr.expression
       builder.position_at_end basic_block
 
-      llvm_casted_type = expr.casted_type.type.to_llvm_type @ctx
+      llvm_casted_type = expr.to_type.type.to_llvm_type @ctx
 
-      return case {value.type.kind, llvm_casted_type.kind}
-      in {LLVM::Type::Kind::Integer, LLVM::Type::Kind::Double}
-        {builder.si2fp(value, llvm_casted_type, "casttmp"), basic_block, expr.casted_type}
-      in {LLVM::Type::Kind::Double, LLVM::Type::Kind::Integer}
-        {builder.fp2si(value, llvm_casted_type, "casttmp"), basic_block, expr.casted_type}
+      return case {value_type.type, expr.to_type.type}
+      in {TypeType::Integer, TypeType::Double}
+        {builder.si2fp(value, llvm_casted_type, "casttmp"), basic_block, expr.to_type}
+      in {TypeType::Double, TypeType::Integer}
+        {builder.fp2si(value, llvm_casted_type, "casttmp"), basic_block, expr.to_type}
+      in {TypeType::Boolean, TypeType::Integer}
+        {builder.zext(value, llvm_casted_type, "casttmp"), basic_block, expr.to_type}
+      in {TypeType::Integer, TypeType::Boolean}
+        {builder.icmp(LLVM::IntPredicate::NE, value, @ctx.int64.const_int(0), "casttmp"), basic_block, expr.to_type}
       in {_, _}
         {value, basic_block, value_type}
       end

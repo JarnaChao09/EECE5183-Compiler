@@ -23,7 +23,7 @@ module Compiler
 
       @mod = @ctx.new_module(mod_name)
 
-      @function = @mod.functions.add "main", [] of LLVM::Type, @ctx.int32
+      @function = @mod.functions.add "main", [] of LLVM::Type, @ctx.int64
       @function_name = ""
       @function_names = {} of String => String
       @global_function_names = {} of String => String
@@ -59,7 +59,7 @@ module Compiler
       end
 
       current_builder.position_at_end current_basic_block
-      current_builder.ret @ctx.int32.const_int 0
+      current_builder.ret @ctx.int64.const_int 0
     end
 
     def generate(program : Compiler::Program)
@@ -106,6 +106,10 @@ module Compiler
       LLVM::PassBuilderOptions.new do |options|
         LLVM.run_passes(@mod, level, @target_machine, options)
       end
+    end
+
+    def emit_to_obj_file(filename)
+      @target_machine.emit_obj_to_file @mod, filename
     end
   end
 end
