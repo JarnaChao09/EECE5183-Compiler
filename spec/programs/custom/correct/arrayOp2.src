@@ -23,17 +23,8 @@ begin
     arr2[1] := 6;
     arr2[2] := 12;
 
-    // Operations on valid types
     tmp := printArr(arr + arr2);
-
-    // Assignment types must match exactly, so the following is illegal
-    // arr2 := arr + arr2;
-    // float + integer -> float
-    // integer != float
     
-    // However this is legal
     arr := arr / arr2;
-    // float / integer -> float
-    // float == float
     tmp := printArr(arr);
 end program.
