@@ -60,7 +60,7 @@ There are currently two options to get the correct LLVM version:
 4. Export `$(brew --prefix)/lib` as the environment variables `CRYSTAL_LIBRARY_PATH` and `CRYSTAL_LIBRARY_RPATH`. This will allow for Crystal to correctly link against LLVM and its other dependencies (such as libevent).
 5. Verify that crystal is picking up on the correct environment variables with `crystal env`.
 
-> These installation steps were tested on an Ubuntu WSL2 instance, mileage may vary depending.
+> These installation steps were tested on an Ubuntu WSL2 instance, mileage may vary.
 
 ## Development
 
