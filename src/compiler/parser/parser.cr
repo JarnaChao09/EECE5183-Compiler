@@ -403,17 +403,7 @@ module Compiler
           return_value = create_cast return_value, curr_ret_type
         end
       else
-        puts "[WARNING]: TOP LEVEL PROGRAM RETURN DETECTED"
-        eq = check_types return_type, @integer_type
-        castable = check_types_castable return_type, @integer_type
-
-        if !eq && !castable
-          raise "Return types do not match"
-        end
-
-        if castable
-          return_value = create_cast return_value, @integer_type
-        end
+        raise "Return not allowed in top level of the program"
       end
 
       return ReturnStmt.new return_value
