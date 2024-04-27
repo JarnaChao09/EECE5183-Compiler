@@ -54,7 +54,7 @@ There are currently two options to get the correct LLVM version:
 
 ### Installing Crystal using brew
 
-1. Retrieve the correct brew formula for Crystal 1.11.2. This can be done using `curl -o crystal.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/6d066d262ae406852eb4b0b6f25f820a14c8d76c/Formula/c/crystal.rb`
+1. Retrieve the correct brew formula for Crystal 1.11.2. This can be done using `curl -o crystal.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/337abdc50d8299795a13edf78b5eb8f340985579/Formula/c/crystal.rb`
 2. Install using `brew install --formula crystal.rb`
 3. Verify that the correct version of Crystal has been installed with `crystal --version`. The output should show Crystal 1.11.2 and LLVM 17.0.6.
 4. Export `$(brew --prefix)/lib` as the environment variables `CRYSTAL_LIBRARY_PATH` and `CRYSTAL_LIBRARY_RPATH`. This will allow for Crystal to correctly link against LLVM and its other dependencies (such as libevent).
@@ -62,11 +62,20 @@ There are currently two options to get the correct LLVM version:
 
 > These installation steps were tested on an Ubuntu WSL2 instance, mileage may vary.
 
+## Using the Docker Image
+
+> This section assumes that docker is already installed and properly setup. To do so, please see [getting docker](https://docs.docker.com/get-docker/).
+
+1. Run `docker build -t <container_name> .`
+    - This will set up Crystal 1.11.2 and all of its dependencies such that Crystal will be built with LLVM 17.0.6
+2. Run `docker run --rm --it --entrypoint /bin/bash <container_name>`
+3. The compiler binary will be located at `bin/compiler`. All compiled binaries will be outputted to the `output` directory. If no output name is defined with `-o`, it will be `compiler_tmp.out`.
+
 ## Development
 
 As this project is for a university assignment, development will not be encouraged until after the grade has been given for the project. Please check with the main contributor to see if it is ok to start contributing to the project.
 
-All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2020 edition. Crystal was installed using homebrew with LLVM version 17.0.6 and clang version 17.0.6. A docker file will be provided (soon) to be used for all future development.
+All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2020 edition. Crystal was installed using homebrew with LLVM version 17.0.6 and clang version 17.0.6. A docker file is provided to be used for all future development.
 
 ### Remaining Tasks
 
@@ -74,7 +83,7 @@ All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2
 - [ ] Include source information inside error messages
 - [ ] Advanced resynchronization capabilities
 - [ ] Update strings to not memory leak
-- [ ] Create docker file
+- [x] Create docker file
 - [ ] Create better, more advanced, cli options
 
 ## Contributing

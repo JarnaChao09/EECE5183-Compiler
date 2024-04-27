@@ -408,9 +408,7 @@ if compile
 
   generator.emit_to_obj_file "output/#{name}.o"
 
-  clang_process_test = Process.run("clang", ["--version"], output: Process::Redirect::Pipe)
-
-  clang_process = Process.run("clang", ["output/#{name}.o", "-o", "output/#{name}"])
+  clang_process = Process.run("clang", ["-lm", "output/#{name}.o", "-o", "output/#{name}"])
 
   puts "compiled with status code #{$?}"
 elsif run
