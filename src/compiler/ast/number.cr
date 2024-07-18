@@ -11,11 +11,11 @@ module Compiler
       def to_s(io : IO)
         io << "(#{@value})"
       end
+    end
 
-      class Compiler::CodeGenerator
-        def generate(builder, basic_block, expr : {{ number_type_name }}Expr) : {LLVM::Value, LLVM::BasicBlock, Type}
-          return { {{ codegen_code }} , basic_block, {{ type_kind }} }
-        end
+    class Compiler::CodeGenerator
+      def generate(builder, basic_block, expr : {{ number_type_name }}Expr) : {LLVM::Value, LLVM::BasicBlock, Type}
+        return { {{ codegen_code }} , basic_block, {{ type_kind }} }
       end
     end
   end

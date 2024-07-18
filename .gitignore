@@ -4,4 +4,5 @@
 /output/
 /.shards/
 *.dwarf
+*.lock
 .DS_Store
