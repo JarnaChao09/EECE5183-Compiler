@@ -1,12 +1,12 @@
 # PasCry
 
-PasCry is a small prototype Pascal-like derivative written in Crystal. The point of this project was to learn more about LLVM and building an end-to-end compiler from source text to native binary. 
+PasCry (**Pas**cal in **Cry**stal) is a small prototype Pascal-like derivative written in Crystal. The point of this project was to learn more about LLVM and building an end-to-end compiler from source text to native binary. 
 
 ## Example
 
 The following is an example program of the array programming operations in PasCry.
 
-```
+```pascal
 program arr is
     variable tmp : integer;
     variable arr : integer[3];
@@ -110,13 +110,11 @@ There are currently two options to get the correct LLVM version:
 
 ## Development
 
-As this project is for a university assignment, development will not be encouraged until after the grade has been given for the project. Please check with the main contributor to see if it is ok to start contributing to the project.
-
 All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2020 edition. Crystal was installed using homebrew with LLVM version 17.0.6 and clang version 17.0.6. A docker file is provided to be used for all future development.
 
 ### Remaining Tasks
 
-- [ ] Verify remaining semantic details
+- [x] Verify remaining semantic details
 - [ ] Include source information inside error messages
 - [ ] Advanced resynchronization capabilities
 - [ ] Update strings to not memory leak
