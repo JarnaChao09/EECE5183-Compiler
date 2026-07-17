@@ -1,6 +1,43 @@
-# EECE 5183 Compiler
+# PasCry
 
-A compiler of a Pascal-like derivative for EECE 5183 Compiler Theory and Practice at the University of Cincinnati
+PasCry is a small prototype Pascal-like derivative written in Crystal. The point of this project was to learn more about LLVM and building an end-to-end compiler from source text to native binary. 
+
+## Example
+
+The following is an example program of the array programming operations in PasCry.
+
+```
+program arr is
+    variable tmp : integer;
+    variable arr : integer[3];
+
+    procedure stuff : integer()
+        variable x : integer[3];
+    begin
+
+    tmp := getinteger();
+    x[0] := tmp;
+    arr[0] := tmp + 1;
+    x[1] := tmp - 1;
+    arr[1] := tmp + 10;
+    x[2] := tmp * 10;
+    arr[2] := tmp * 2;
+
+    tmp := putinteger(x[0]);
+    tmp := putinteger(x[1]);
+    tmp := putinteger(x[2]);
+    tmp := putinteger(arr[0]);
+    tmp := putinteger(arr[1]);
+    tmp := putinteger(arr[2]);
+
+	return 0;
+    end procedure;
+begin
+    tmp := stuff();
+end program.
+```
+
+More example programs can be found [here](/spec/programs)
 
 ## Installation
 
@@ -88,7 +125,7 @@ All development occurred on Crystal version 1.11.2 on a 13 inch M1 Macbook Pro 2
 
 ## Contributing
 
-1. Fork it (<https://github.com/JarnaChao09/EECE5183-Compiler>)
+1. Fork it (<https://github.com/JarnaChao09/PasCry>)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
