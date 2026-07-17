@@ -39,6 +39,77 @@ end program.
 
 More example programs can be found [here](/spec/programs)
 
+## Features
+
+| Area | Supported |
+| --- | --- |
+| Builtin Types | `integer`, `float`, `string`, `bool`, and fixed-sizes arrays of builtin types |
+| Declarations | global and local typed procedure and typed variable declarations |
+| Control Flow | if statements (`if (cond) then if_body; else else_body; end if`), loops (`for (init; cond) body; end for`), recursion |
+| Operators | scalar and array arithmetic, scalar and array comparison, scalar and array logical |
+| Builtin functions | `getInteger`/`putInteger`, `getFloat`/`putFloat`, `getBool`/`putBool`, `getString`/`putString`, `sqrt` |
+
+## Grammar for PasCry
+```ebnf
+program = program_header program_body "." ;
+
+program_header = "program" identifier "is" ;
+
+program_body = ( declaration ";" )* "begin" ( statement ";" )* "end program" ;
+
+declaration = ( "global" )? ( procedure_declaration | variable_declaration ) ;
+
+procedure_declaration = procedure_header procedure_body ;
+
+procedure_header = "procedure" identifier ":" type_mark "(" parameter_list? ")" ;
+
+parameter_list = parameter ( "," parameter )* | parameter ;
+
+parameter =  variable_declaration;
+
+procedure_body =  ( declaration ";" )* "begin" ( statement ";" )* "end procedure" ;
+
+variable_declaration = "variable" identifier ":" type_mark ( "[" bound "]" )? ;
+
+type_mark = "integer" | "float" | "string" | "bool" ;
+
+bound = number ;
+
+statement = assignment_statement | if_statement | loop_statement | return_statement ;
+
+procedure_call = identifier "(" argument_list? ")" ;
+
+assignment_statement = destination ":=" expression ;
+
+destination = identifier ( "[" expression "]" )? ;
+
+if_statement = "if" "(" expression ")" "then" ( statement ";" )* ( "else" ( statement ";" )* )? "end if" ;
+
+loop_statement = "for" "(" assignment_statement ";" expression ")" ( statement ";" )* "end for" ;
+
+return_statement = "return" expression ;
+
+identifier = [a-zA-Z] [a-zA-Z0-9_]* ;
+
+expression = ( "not" )? arithOp ( "&" | "|" expression )* ;
+
+arithOp = relation ( "+" | "-" arithOp )* ;
+
+relation = term ( "<" | ">=" | "<=" | ">" | "==" | "!=" term )* ;
+
+term = factor ( "*" | "/" factor )* ;
+
+factor = "(" expression ")" | procedure_call | ( "-" )? ( name | number | string | "true" | "false" ) ;
+
+name = identifier ( "[" expression "]" )? ;
+
+argument_list = expression ( "," expression )* ;
+
+number = [0-9] [0-9_]* [.[0-9_]*] ;
+
+string = "\"" [^"]* "\"" ;
+```
+
 ## Installation
 
 ### Requirements
